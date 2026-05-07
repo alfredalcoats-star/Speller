@@ -72,7 +72,7 @@ html { font-size: 16px; scroll-behavior: smooth; }
 
 body {
   font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
-  background: var(--cream);
+  background: linear-gradient(135deg, #FFF4C7 0%, #FFE99A 35%, #FFD86B 70%, #FFC847 100%);
   color: var(--text-dark);
   min-height: 100vh;
   overflow-x: hidden;
@@ -85,11 +85,16 @@ body {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='121'%3E%3Cpath d='M35 80L0 60V20L35 0l35 20v40L35 80zm0-10l28-16.2V26.2L35 10 7 26.2v27.6L35 70z' fill='%23FFD60A' fill-opacity='0.10'/%3E%3C/svg%3E");
-  background-size: 70px 121px;
-  /* Fade edges */
-  -webkit-mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 30%, transparent 100%);
-  mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 30%, transparent 100%);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='146'%3E%3Cpath d='M42 96L0 72V24L42 0l42 24v48L42 96zm0-12l33-19V31L42 12 9 31v34z' fill='%23E09600' fill-opacity='0.22' stroke='%23E09600' stroke-opacity='0.12' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 84px 146px;
+}
+.hc-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 70% at 50% 40%, rgba(255,253,230,0.55) 0%, rgba(255,253,230,0) 70%);
+  pointer-events: none;
 }
 
 /* ===== FLOATING DECORATIVE ELEMENTS ===== */
@@ -104,7 +109,7 @@ body {
 .floater {
   position: absolute;
   font-size: 1.6rem;
-  opacity: 0.18;
+  opacity: 0.35;
   animation: floatDrift 12s ease-in-out infinite;
   user-select: none;
 }
@@ -176,11 +181,11 @@ body {
 }
 
 .bee-wrap {
-  width: 86px;
-  height: 86px;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
   animation: beeBob 3.5s ease-in-out infinite;
-  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.18));
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.18));
 }
 .bee { width: 100%; height: 100%; }
 
@@ -207,9 +212,10 @@ body {
 
 .logo-title {
   font-family: 'Fredoka One', cursive;
-  font-size: 2rem;
+  font-size: 1.6rem;
   color: var(--bee-black);
   letter-spacing: -0.5px;
+  white-space: nowrap;
   text-shadow: 2px 3px 0 rgba(255,255,255,0.4), -1px -1px 0 rgba(0,0,0,0.08);
 }
 .logo-title span {
@@ -339,10 +345,10 @@ body {
 .hero-bee-large {
   position: relative;
   z-index: 1;
-  width: 220px;
+  width: 130px;
   flex-shrink: 0;
   animation: beeBob 4s ease-in-out infinite;
-  filter: drop-shadow(0 12px 24px rgba(0,0,0,0.2));
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.2));
 }
 .hero-bee-large svg { width: 100%; height: auto; }
 
@@ -1128,9 +1134,9 @@ body {
 .result-area.hidden { display: none; }
 
 .result-bee-wrap {
-  width: 140px;
-  height: 140px;
-  margin: 0 auto 24px;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 20px;
 }
 .bee-celebrate {
   width: 100%;
@@ -1294,18 +1300,18 @@ body {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
-  .hero-bee-large { width: 170px; }
+  .hero-bee-large { width: 110px; }
   .hero-title     { font-size: 2.5rem; }
 }
 
 @media (max-width: 740px) {
   .hero-banner    { flex-direction: column; text-align: center; padding: 36px 24px; }
-  .hero-bee-large { width: 160px; }
+  .hero-bee-large { width: 110px; }
   .hero-title     { font-size: 2.2rem; }
   .hero-sub       { max-width: 100%; }
   .hero-stats     { justify-content: center; }
-  .logo-title     { font-size: 1.6rem; }
-  .bee-wrap       { width: 70px; height: 70px; }
+  .logo-title     { font-size: 1.4rem; }
+  .bee-wrap       { width: 44px; height: 44px; }
   .grade-grid     { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
   .how-arrow      { display: none; }
   .how-steps      { gap: 12px; }
