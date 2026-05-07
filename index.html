@@ -3,236 +3,398 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Spelling Hive — Learn to Spell & Read!</title>
+  <title>SpellingHive — Learn to Spell & Read!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<!-- Honeycomb background SVG pattern -->
-<div class="honeycomb-bg" aria-hidden="true"></div>
+<!-- Honeycomb faded background -->
+<div class="hc-bg" aria-hidden="true"></div>
 
-<!-- Header -->
+<!-- Floating decorative blobs -->
+<div class="floaters" aria-hidden="true">
+  <div class="floater f1">🌸</div>
+  <div class="floater f2">⭐</div>
+  <div class="floater f3">🌼</div>
+  <div class="floater f4">✨</div>
+  <div class="floater f5">🌟</div>
+  <div class="floater f6">🍯</div>
+</div>
+
+<!-- Confetti container -->
+<div id="confettiContainer" class="confetti-container" aria-hidden="true"></div>
+
+<!-- ===== HEADER ===== -->
 <header class="site-header">
   <div class="header-inner">
-    <div class="logo-area">
-      <!-- Animated Bee SVG -->
+
+    <!-- Logo + Bee -->
+    <a class="logo-area" href="#" id="logoHome">
       <div class="bee-wrap" id="heroBee">
-        <svg class="bee" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-label="Happy bee mascot">
-          <!-- Bee body -->
-          <ellipse cx="60" cy="72" rx="26" ry="20" fill="#FFD700"/>
-          <!-- Black stripes -->
-          <ellipse cx="60" cy="72" rx="26" ry="20" fill="none" stroke="#1a1a1a" stroke-width="2"/>
-          <path d="M36 68 Q60 64 84 68" stroke="#1a1a1a" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <path d="M36 75 Q60 71 84 75" stroke="#1a1a1a" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <!-- Head -->
-          <circle cx="60" cy="48" r="18" fill="#FFD700"/>
-          <circle cx="60" cy="48" r="18" fill="none" stroke="#1a1a1a" stroke-width="2"/>
-          <!-- Eyes -->
-          <circle cx="53" cy="44" r="5" fill="white"/>
-          <circle cx="67" cy="44" r="5" fill="white"/>
-          <circle cx="54" cy="45" r="3" fill="#1a1a1a"/>
-          <circle cx="68" cy="45" r="3" fill="#1a1a1a"/>
-          <!-- Happy mouth -->
-          <path d="M52 55 Q60 62 68 55" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-          <!-- Rosy cheeks -->
-          <circle cx="47" cy="52" r="5" fill="#FF9999" opacity="0.6"/>
-          <circle cx="73" cy="52" r="5" fill="#FF9999" opacity="0.6"/>
-          <!-- Antennae -->
-          <line x1="53" y1="31" x2="46" y2="18" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
-          <circle cx="46" cy="17" r="4" fill="#FF6B35"/>
-          <line x1="67" y1="31" x2="74" y2="18" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
-          <circle cx="74" cy="17" r="4" fill="#FF6B35"/>
-          <!-- Wings left -->
-          <ellipse cx="38" cy="58" rx="16" ry="10" fill="rgba(200,230,255,0.75)" stroke="#99ccff" stroke-width="1.5" class="wing-left"/>
-          <!-- Wings right -->
-          <ellipse cx="82" cy="58" rx="16" ry="10" fill="rgba(200,230,255,0.75)" stroke="#99ccff" stroke-width="1.5" class="wing-right"/>
+        <svg class="bee" viewBox="0 0 160 190" xmlns="http://www.w3.org/2000/svg" aria-label="Happy bee mascot">
+          <!-- Wings (behind body) -->
+          <ellipse cx="42" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-left"/>
+          <ellipse cx="118" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-right"/>
+          <!-- Body -->
+          <ellipse cx="80" cy="128" rx="38" ry="32" fill="#FFD700"/>
+          <!-- Stripes -->
+          <path d="M44 118 Q80 111 116 118" stroke="#1a1a1a" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M43 132 Q80 125 117 132" stroke="#1a1a1a" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <!-- Body border -->
+          <ellipse cx="80" cy="128" rx="38" ry="32" fill="none" stroke="#c8950a" stroke-width="2.5"/>
           <!-- Stinger -->
-          <polygon points="60,90 55,95 65,95" fill="#e6a800" stroke="#1a1a1a" stroke-width="1"/>
-          <!-- Sparkles -->
-          <text x="14" y="35" font-size="12" class="sparkle">✨</text>
-          <text x="90" y="30" font-size="10" class="sparkle2">⭐</text>
+          <polygon points="80,159 71,176 89,176" fill="#e6a800" stroke="#b8840a" stroke-width="1.5"/>
+          <!-- Neck connector -->
+          <ellipse cx="80" cy="94" rx="15" ry="11" fill="#FFD700" stroke="#c8950a" stroke-width="2"/>
+          <!-- Head -->
+          <circle cx="80" cy="68" r="30" fill="#FFD700" stroke="#c8950a" stroke-width="2.5"/>
+          <!-- Forehead shine -->
+          <ellipse cx="72" cy="52" rx="10" ry="6" fill="rgba(255,255,255,0.3)" transform="rotate(-15,72,52)"/>
+          <!-- Eyes -->
+          <circle cx="65" cy="62" r="11" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="95" cy="62" r="11" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="67" cy="63" r="6.5" fill="#1a1a1a"/>
+          <circle cx="97" cy="63" r="6.5" fill="#1a1a1a"/>
+          <!-- Eye shine -->
+          <circle cx="70" cy="60" r="2.5" fill="white"/>
+          <circle cx="100" cy="60" r="2.5" fill="white"/>
+          <!-- Happy smile -->
+          <path d="M60 80 Q80 98 100 80" stroke="#1a1a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <!-- Rosy cheeks -->
+          <circle cx="52" cy="74" r="9" fill="#FF9EAB" opacity="0.45"/>
+          <circle cx="108" cy="74" r="9" fill="#FF9EAB" opacity="0.45"/>
+          <!-- Antennae -->
+          <path d="M68 40 Q58 22 46 12" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="44" cy="10" r="7" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M92 40 Q102 22 114 12" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="116" cy="10" r="7" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
+          <!-- Tiny heart on antenna -->
+          <text x="38" y="10" font-size="8" text-anchor="middle">♥</text>
+          <text x="114" y="10" font-size="8" text-anchor="middle">♥</text>
         </svg>
       </div>
       <div class="logo-text">
-        <h1>Spelling<span>Hive</span></h1>
-        <p class="tagline">Buzz your way to better spelling!</p>
+        <div class="logo-title">Spelling<span>Hive</span></div>
+        <div class="logo-tag">Buzz your way to better spelling! 🍯</div>
       </div>
-    </div>
-    <nav class="top-nav">
+    </a>
+
+    <!-- Navigation -->
+    <nav class="top-nav" role="navigation" aria-label="Main navigation">
       <button class="nav-btn active" data-view="home">🏠 Home</button>
       <button class="nav-btn" data-view="games">🎮 Games</button>
-      <button class="nav-btn" data-view="practice">📝 Practice</button>
     </nav>
   </div>
 </header>
 
-<!-- Home Screen -->
+<!-- ===== HOME SCREEN ===== -->
 <main id="homeScreen" class="screen active">
-  <section class="hero-section">
-    <div class="hero-text">
-      <h2>Pick Your Grade, Start Buzzing!</h2>
-      <p>Master spelling with fun games designed for every grade level. Match definitions, find context clues, and fill in missing words!</p>
+
+  <!-- Hero Banner -->
+  <section class="hero-banner">
+    <div class="hero-content">
+      <div class="hero-badge">✨ Free for All Grades K–8 ✨</div>
+      <h2 class="hero-title">Learn to Spell &amp;<br/>Read with Fun!</h2>
+      <p class="hero-sub">Play word games, match definitions, find context clues, and fill in the blanks. Learning has never been sweeter!</p>
+      <div class="hero-stats">
+        <div class="stat-chip">📚 9 Grade Levels</div>
+        <div class="stat-chip">🎮 3 Game Types</div>
+        <div class="stat-chip">🏆 Earn Stars</div>
+      </div>
     </div>
-  </section>
-
-  <section class="grade-grid-section">
-    <h3 class="section-title">Choose Your Grade Level</h3>
-    <div class="grade-grid">
-      <button class="grade-card" data-grade="K">
-        <div class="grade-icon">🌟</div>
-        <div class="grade-label">Kindergarten</div>
-        <div class="grade-sub">Simple 3-letter words</div>
-      </button>
-      <button class="grade-card" data-grade="1">
-        <div class="grade-icon">🐝</div>
-        <div class="grade-label">Grade 1</div>
-        <div class="grade-sub">Basic sight words</div>
-      </button>
-      <button class="grade-card" data-grade="2">
-        <div class="grade-icon">🍎</div>
-        <div class="grade-label">Grade 2</div>
-        <div class="grade-sub">Building vocabulary</div>
-      </button>
-      <button class="grade-card" data-grade="3">
-        <div class="grade-icon">📚</div>
-        <div class="grade-label">Grade 3</div>
-        <div class="grade-sub">Word meanings & usage</div>
-      </button>
-      <button class="grade-card" data-grade="4">
-        <div class="grade-icon">🔬</div>
-        <div class="grade-label">Grade 4</div>
-        <div class="grade-sub">Complex vocabulary</div>
-      </button>
-      <button class="grade-card" data-grade="5">
-        <div class="grade-icon">🌍</div>
-        <div class="grade-label">Grade 5</div>
-        <div class="grade-sub">Advanced words</div>
-      </button>
-      <button class="grade-card" data-grade="6">
-        <div class="grade-icon">🎭</div>
-        <div class="grade-label">Grade 6</div>
-        <div class="grade-sub">Literary terms</div>
-      </button>
-      <button class="grade-card" data-grade="7">
-        <div class="grade-icon">⚗️</div>
-        <div class="grade-label">Grade 7</div>
-        <div class="grade-sub">Academic language</div>
-      </button>
-      <button class="grade-card" data-grade="8">
-        <div class="grade-icon">🏆</div>
-        <div class="grade-label">Grade 8</div>
-        <div class="grade-sub">Challenge words</div>
-      </button>
-    </div>
-  </section>
-
-  <section class="features-section">
-    <div class="feature-card">
-      <div class="feature-icon">🔗</div>
-      <h4>Word Match</h4>
-      <p>Match each spelling word to its definition!</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🔍</div>
-      <h4>Context Clues</h4>
-      <p>Use sentence clues to figure out word meanings!</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">✏️</div>
-      <h4>Missing Words</h4>
-      <p>Fill in the blank to complete each sentence!</p>
-    </div>
-  </section>
-</main>
-
-<!-- Game Select Screen -->
-<main id="gamesScreen" class="screen">
-  <div class="screen-header">
-    <button class="back-btn" id="backFromGames">← Back</button>
-    <h2 id="gradeTitle">Grade K — Choose a Game</h2>
-  </div>
-
-  <div class="game-select-grid">
-    <button class="game-select-card" data-game="match">
-      <div class="game-sel-icon">🔗</div>
-      <h3>Word Match</h3>
-      <p>Click a word, then click its matching definition. Test your memory!</p>
-      <span class="game-badge">8 Words</span>
-    </button>
-    <button class="game-select-card" data-game="context">
-      <div class="game-sel-icon">🔍</div>
-      <h3>Context Clues</h3>
-      <p>Read the sentence carefully. Use clues to pick the right meaning!</p>
-      <span class="game-badge">8 Rounds</span>
-    </button>
-    <button class="game-select-card" data-game="missing">
-      <div class="game-sel-icon">✏️</div>
-      <h3>Missing Words</h3>
-      <p>Complete the sentence by choosing the word that fits best!</p>
-      <span class="game-badge">8 Rounds</span>
-    </button>
-  </div>
-</main>
-
-<!-- Practice / Game Screen -->
-<main id="practiceScreen" class="screen">
-  <div class="screen-header">
-    <button class="back-btn" id="backFromPractice">← Back</button>
-    <h2 id="gameTitle">Word Match</h2>
-    <div class="score-badge">
-      Score: <span id="scoreDisplay">0</span> / <span id="totalDisplay">0</span>
-    </div>
-  </div>
-
-  <!-- Progress bar -->
-  <div class="progress-bar-wrap">
-    <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
-  </div>
-
-  <!-- Game area -->
-  <div id="gameArea"></div>
-
-  <!-- Result screen -->
-  <div id="resultArea" class="result-area hidden">
-    <div class="result-bee">
-      <svg class="bee bee-celebrate" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="60" cy="72" rx="26" ry="20" fill="#FFD700"/>
-        <ellipse cx="60" cy="72" rx="26" ry="20" fill="none" stroke="#1a1a1a" stroke-width="2"/>
-        <path d="M36 68 Q60 64 84 68" stroke="#1a1a1a" stroke-width="5" fill="none" stroke-linecap="round"/>
-        <path d="M36 75 Q60 71 84 75" stroke="#1a1a1a" stroke-width="5" fill="none" stroke-linecap="round"/>
-        <circle cx="60" cy="48" r="18" fill="#FFD700"/>
-        <circle cx="60" cy="48" r="18" fill="none" stroke="#1a1a1a" stroke-width="2"/>
-        <circle cx="53" cy="44" r="5" fill="white"/>
-        <circle cx="67" cy="44" r="5" fill="white"/>
-        <circle cx="54" cy="45" r="3" fill="#1a1a1a"/>
-        <circle cx="68" cy="45" r="3" fill="#1a1a1a"/>
-        <path d="M50 54 Q60 64 70 54" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-        <circle cx="47" cy="52" r="5" fill="#FF9999" opacity="0.6"/>
-        <circle cx="73" cy="52" r="5" fill="#FF9999" opacity="0.6"/>
-        <line x1="53" y1="31" x2="46" y2="18" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
-        <circle cx="46" cy="17" r="4" fill="#FF6B35"/>
-        <line x1="67" y1="31" x2="74" y2="18" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
-        <circle cx="74" cy="17" r="4" fill="#FF6B35"/>
-        <ellipse cx="38" cy="58" rx="16" ry="10" fill="rgba(200,230,255,0.75)" stroke="#99ccff" stroke-width="1.5" class="wing-left"/>
-        <ellipse cx="82" cy="58" rx="16" ry="10" fill="rgba(200,230,255,0.75)" stroke="#99ccff" stroke-width="1.5" class="wing-right"/>
-        <polygon points="60,90 55,95 65,95" fill="#e6a800" stroke="#1a1a1a" stroke-width="1"/>
+    <div class="hero-bee-large" aria-hidden="true">
+      <svg viewBox="0 0 200 230" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="50" cy="110" rx="44" ry="26" fill="rgba(186,230,255,0.8)" stroke="#7ec8f0" stroke-width="2" class="wing-left"/>
+        <ellipse cx="150" cy="110" rx="44" ry="26" fill="rgba(186,230,255,0.8)" stroke="#7ec8f0" stroke-width="2" class="wing-right"/>
+        <ellipse cx="100" cy="155" rx="46" ry="38" fill="#FFD700"/>
+        <path d="M56 143 Q100 134 144 143" stroke="#1a1a1a" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <path d="M55 160 Q100 151 145 160" stroke="#1a1a1a" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <ellipse cx="100" cy="155" rx="46" ry="38" fill="none" stroke="#c8950a" stroke-width="3"/>
+        <polygon points="100,192 88,212 112,212" fill="#e6a800" stroke="#b8840a" stroke-width="2"/>
+        <circle cx="100" cy="80" r="36" fill="#FFD700" stroke="#c8950a" stroke-width="3"/>
+        <ellipse cx="89" cy="63" rx="12" ry="7" fill="rgba(255,255,255,0.28)" transform="rotate(-15,89,63)"/>
+        <circle cx="84" cy="74" r="13" fill="white" stroke="#1a1a1a" stroke-width="2.5"/>
+        <circle cx="116" cy="74" r="13" fill="white" stroke="#1a1a1a" stroke-width="2.5"/>
+        <circle cx="86" cy="76" r="8" fill="#1a1a1a"/>
+        <circle cx="118" cy="76" r="8" fill="#1a1a1a"/>
+        <circle cx="89" cy="73" r="3" fill="white"/>
+        <circle cx="121" cy="73" r="3" fill="white"/>
+        <path d="M74 96 Q100 118 126 96" stroke="#1a1a1a" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <circle cx="66" cy="88" r="11" fill="#FF9EAB" opacity="0.45"/>
+        <circle cx="134" cy="88" r="11" fill="#FF9EAB" opacity="0.45"/>
+        <path d="M83 48 Q71 28 57 16" stroke="#1a1a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="54" cy="12" r="9" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
+        <path d="M117 48 Q129 28 143 16" stroke="#1a1a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="146" cy="12" r="9" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
+        <text x="20" y="30" font-size="18" class="sparkle">✨</text>
+        <text x="160" y="24" font-size="14" class="sparkle2">⭐</text>
+        <text x="170" y="60" font-size="12" class="sparkle">🌟</text>
       </svg>
     </div>
-    <h2 id="resultTitle">Great job!</h2>
-    <p id="resultMessage"></p>
-    <div class="result-stars" id="resultStars"></div>
-    <div class="result-buttons">
-      <button class="btn-primary" id="playAgainBtn">Play Again</button>
-      <button class="btn-secondary" id="chooseGameBtn">Choose Game</button>
+  </section>
+
+  <!-- Game Types Preview -->
+  <section class="games-preview-section">
+    <h3 class="section-heading">🎮 Three Ways to Play</h3>
+    <div class="games-preview-grid">
+      <div class="preview-card pc-blue">
+        <div class="pc-icon">🔗</div>
+        <h4>Word Match</h4>
+        <p>Click a word, then click its matching definition. Test your memory!</p>
+        <div class="pc-tag">Memory Game</div>
+      </div>
+      <div class="preview-card pc-purple">
+        <div class="pc-icon">🔍</div>
+        <h4>Context Clues</h4>
+        <p>Read the sentence and pick the correct meaning using context clues!</p>
+        <div class="pc-tag">Reading Skills</div>
+      </div>
+      <div class="preview-card pc-green">
+        <div class="pc-icon">✏️</div>
+        <h4>Missing Words</h4>
+        <p>Find the perfect word to complete each sentence!</p>
+        <div class="pc-tag">Fill in the Blank</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Grade Selection -->
+  <section class="grade-section">
+    <h3 class="section-heading">📚 Choose Your Grade Level</h3>
+    <p class="section-sub">Pick your grade to get words and games just right for you!</p>
+    <div class="grade-grid">
+      <button class="grade-card gc-purple" data-grade="K">
+        <div class="gc-ribbon">Beginner</div>
+        <div class="gc-icon">🌟</div>
+        <div class="gc-name">Kinder&shy;garten</div>
+        <div class="gc-desc">Simple 3-letter words</div>
+        <div class="gc-arrow">→</div>
+      </button>
+      <button class="grade-card gc-blue" data-grade="1">
+        <div class="gc-icon">🐝</div>
+        <div class="gc-name">Grade 1</div>
+        <div class="gc-desc">Basic sight words</div>
+        <div class="gc-arrow">→</div>
+      </button>
+      <button class="grade-card gc-teal" data-grade="2">
+        <div class="gc-icon">🍎</div>
+        <div class="gc-name">Grade 2</div>
+        <div class="gc-desc">Building vocabulary</div>
+        <div class="gc-arrow">→</div>
+      </button>
+      <button class="grade-card gc-green" data-grade="3">
+        <div class="gc-icon">📚</div>
+        <div class="gc-name">Grade 3</div>
+        <div class="gc-desc">Word meanings &amp; usage</div>
+        <div class="gc-arrow">→</div>
+      </button>
+      <button class="grade-card gc-yellow" data-grade="4">
+        <div class="gc-icon">🔬</div>
+        <div class="gc-name">Grade 4</div>
+        <div class="gc-desc">Complex vocabulary</div>
+        <div class="gc-arrow">→</div>
+      </button>
+      <button class="grade-card gc-orange" data-grade="5">
+        <div class="gc-icon">🌍</div>
+        <div class="gc-name">Grade 5</div>
+        <div class="gc-desc">Advanced words</div>
+        <div class="gc-arrow">→</div>
+      </button>
+      <button class="grade-card gc-coral" data-grade="6">
+        <div class="gc-icon">🎭</div>
+        <div class="gc-name">Grade 6</div>
+        <div class="gc-desc">Literary terms</div>
+        <div class="gc-arrow">→</div>
+      </button>
+      <button class="grade-card gc-pink" data-grade="7">
+        <div class="gc-icon">⚗️</div>
+        <div class="gc-name">Grade 7</div>
+        <div class="gc-desc">Academic language</div>
+        <div class="gc-arrow">→</div>
+      </button>
+      <button class="grade-card gc-navy" data-grade="8">
+        <div class="gc-ribbon top-ribbon">Expert</div>
+        <div class="gc-icon">🏆</div>
+        <div class="gc-name">Grade 8</div>
+        <div class="gc-desc">Challenge words</div>
+        <div class="gc-arrow">→</div>
+      </button>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-section">
+    <h3 class="section-heading">🌟 How It Works</h3>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="step-num">1</div>
+        <div class="step-icon">📚</div>
+        <div class="step-text">Pick your grade level</div>
+      </div>
+      <div class="how-arrow">→</div>
+      <div class="how-step">
+        <div class="step-num">2</div>
+        <div class="step-icon">🎮</div>
+        <div class="step-text">Choose a game type</div>
+      </div>
+      <div class="how-arrow">→</div>
+      <div class="how-step">
+        <div class="step-num">3</div>
+        <div class="step-icon">🏆</div>
+        <div class="step-text">Earn stars &amp; celebrate!</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== GAME SELECT SCREEN ===== -->
+<main id="gamesScreen" class="screen">
+  <div class="inner-wrap">
+    <div class="screen-topbar">
+      <button class="back-btn" id="backFromGames">
+        <span class="back-arrow">←</span> Back
+      </button>
+      <h2 id="gradeTitle" class="screen-title">Kindergarten — Choose a Game</h2>
+    </div>
+
+    <p class="screen-sub">Pick a game and start practicing your spelling words!</p>
+
+    <div class="game-select-grid">
+      <button class="game-sel-card gsc-blue" data-game="match">
+        <div class="gsc-header">
+          <div class="gsc-icon">🔗</div>
+          <div class="gsc-badge">Memory</div>
+        </div>
+        <h3>Word Match</h3>
+        <p>Click a word, then click its matching definition. Can you match them all?</p>
+        <div class="gsc-info">
+          <span>⏱ ~3 min</span>
+          <span>📋 8 Words</span>
+        </div>
+        <div class="gsc-play-btn">Play Now →</div>
+      </button>
+
+      <button class="game-sel-card gsc-purple" data-game="context">
+        <div class="gsc-header">
+          <div class="gsc-icon">🔍</div>
+          <div class="gsc-badge">Reading</div>
+        </div>
+        <h3>Context Clues</h3>
+        <p>Read each sentence and use clues to figure out what the word means!</p>
+        <div class="gsc-info">
+          <span>⏱ ~4 min</span>
+          <span>📋 8 Rounds</span>
+        </div>
+        <div class="gsc-play-btn">Play Now →</div>
+      </button>
+
+      <button class="game-sel-card gsc-green" data-game="missing">
+        <div class="gsc-header">
+          <div class="gsc-icon">✏️</div>
+          <div class="gsc-badge">Fill-In</div>
+        </div>
+        <h3>Missing Words</h3>
+        <p>Choose the word that completes each sentence perfectly!</p>
+        <div class="gsc-info">
+          <span>⏱ ~4 min</span>
+          <span>📋 8 Rounds</span>
+        </div>
+        <div class="gsc-play-btn">Play Now →</div>
+      </button>
+    </div>
+  </div>
+</main>
+
+<!-- ===== PRACTICE / GAME SCREEN ===== -->
+<main id="practiceScreen" class="screen">
+  <div class="inner-wrap">
+    <div class="screen-topbar">
+      <button class="back-btn" id="backFromPractice">
+        <span class="back-arrow">←</span> Back
+      </button>
+      <h2 id="gameTitle" class="screen-title">Word Match</h2>
+      <div class="score-pill">
+        <span class="score-star">⭐</span>
+        <span id="scoreDisplay">0</span>/<span id="totalDisplay">0</span>
+      </div>
+    </div>
+
+    <!-- Progress bar with bee -->
+    <div class="progress-wrap">
+      <div class="progress-track">
+        <div class="progress-fill" id="progressBar" style="width:0%"></div>
+      </div>
+      <div class="progress-bee" id="progressBee">🐝</div>
+    </div>
+
+    <!-- Game area -->
+    <div id="gameArea"></div>
+
+    <!-- Result screen -->
+    <div id="resultArea" class="result-area hidden">
+      <div class="result-bee-wrap">
+        <svg class="bee bee-celebrate" viewBox="0 0 160 190" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="42" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-left"/>
+          <ellipse cx="118" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-right"/>
+          <ellipse cx="80" cy="128" rx="38" ry="32" fill="#FFD700"/>
+          <path d="M44 118 Q80 111 116 118" stroke="#1a1a1a" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M43 132 Q80 125 117 132" stroke="#1a1a1a" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <ellipse cx="80" cy="128" rx="38" ry="32" fill="none" stroke="#c8950a" stroke-width="2.5"/>
+          <polygon points="80,159 71,176 89,176" fill="#e6a800" stroke="#b8840a" stroke-width="1.5"/>
+          <ellipse cx="80" cy="94" rx="15" ry="11" fill="#FFD700" stroke="#c8950a" stroke-width="2"/>
+          <circle cx="80" cy="68" r="30" fill="#FFD700" stroke="#c8950a" stroke-width="2.5"/>
+          <circle cx="65" cy="62" r="11" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="95" cy="62" r="11" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="67" cy="63" r="6.5" fill="#1a1a1a"/>
+          <circle cx="97" cy="63" r="6.5" fill="#1a1a1a"/>
+          <circle cx="70" cy="60" r="2.5" fill="white"/>
+          <circle cx="100" cy="60" r="2.5" fill="white"/>
+          <!-- Big celebrate smile -->
+          <path d="M58 82 Q80 102 102 82" stroke="#1a1a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <circle cx="52" cy="74" r="9" fill="#FF9EAB" opacity="0.45"/>
+          <circle cx="108" cy="74" r="9" fill="#FF9EAB" opacity="0.45"/>
+          <path d="M68 40 Q58 22 46 12" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="44" cy="10" r="7" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M92 40 Q102 22 114 12" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="116" cy="10" r="7" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
+          <text x="6" y="28" font-size="16" class="sparkle">🎉</text>
+          <text x="128" y="22" font-size="14" class="sparkle2">⭐</text>
+        </svg>
+      </div>
+      <h2 id="resultTitle" class="result-title">Great job!</h2>
+      <p id="resultMessage" class="result-msg"></p>
+      <div class="result-stars" id="resultStars"></div>
+      <div class="result-buttons">
+        <button class="btn-primary" id="playAgainBtn">🔄 Play Again</button>
+        <button class="btn-secondary" id="chooseGameBtn">🎮 Choose Game</button>
+        <button class="btn-outline" id="homeBtn">🏠 Home</button>
+      </div>
     </div>
   </div>
 </main>
 
 <!-- Toast notification -->
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<!-- Footer -->
 <footer class="site-footer">
-  <p>SpellingHive &copy; 2025 — Making learning as sweet as honey! 🍯</p>
+  <div class="footer-inner">
+    <div class="footer-bee">🐝</div>
+    <div class="footer-text">
+      <strong>SpellingHive</strong> &copy; 2025 — Making learning as sweet as honey! 🍯
+    </div>
+    <div class="footer-links">
+      <span>Grades K–8</span>
+      <span>•</span>
+      <span>3 Game Types</span>
+      <span>•</span>
+      <span>Free Forever</span>
+    </div>
+  </div>
 </footer>
 
 <script src="words-data.js"></script>

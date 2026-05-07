@@ -1,42 +1,52 @@
+/* ===================================================================
+   SpellingHive — App Logic
+   =================================================================== */
+
 /* ===== STATE ===== */
 const state = {
   currentGrade: null,
-  currentGame: null,   // 'match' | 'context' | 'missing'
+  currentGame: null,
   words: [],
   score: 0,
   total: 0,
-  round: 0,           // for context & missing
+  round: 0,
   matchState: {
     selectedWord: null,
-    selectedDef: null,
-    matched: new Set(),
-    wrong: null,
+    selectedDef:  null,
+    matched:      new Set(),
   },
 };
 
-/* ===== NAVIGATION ===== */
+/* ===================================================================
+   NAVIGATION
+   =================================================================== */
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+
+  const viewMap = { homeScreen: 'home', gamesScreen: 'games', practiceScreen: 'practice' };
   document.querySelectorAll('.nav-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.view === id.replace('Screen', ''));
+    b.classList.toggle('active', b.dataset.view === viewMap[id]);
   });
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    const view = btn.dataset.view;
-    if (view === 'home')     showScreen('homeScreen');
-    if (view === 'games')    showScreen('gamesScreen');
-    if (view === 'practice') showScreen('practiceScreen');
+    if (btn.dataset.view === 'home')  showScreen('homeScreen');
+    if (btn.dataset.view === 'games') showScreen('gamesScreen');
   });
+});
+
+document.getElementById('logoHome').addEventListener('click', (e) => {
+  e.preventDefault();
+  showScreen('homeScreen');
 });
 
 document.getElementById('backFromGames').addEventListener('click', () => showScreen('homeScreen'));
 document.getElementById('backFromPractice').addEventListener('click', () => showScreen('gamesScreen'));
 
-/* ===== GRADE SELECT ===== */
+/* ===== GRADE CARDS ===== */
 document.querySelectorAll('.grade-card').forEach(card => {
   card.addEventListener('click', () => {
     const grade = card.dataset.grade;
@@ -44,16 +54,17 @@ document.querySelectorAll('.grade-card').forEach(card => {
     state.words = shuffle([...GRADE_WORDS[grade]]);
     const label = grade === 'K' ? 'Kindergarten' : `Grade ${grade}`;
     document.getElementById('gradeTitle').textContent = `${label} — Choose a Game`;
+    document.querySelector('#gamesScreen .screen-sub').textContent =
+      `${label} spelling words are loaded! Pick your game.`;
     showScreen('gamesScreen');
   });
 });
 
-/* ===== GAME SELECT ===== */
-document.querySelectorAll('.game-select-card').forEach(card => {
+/* ===== GAME CARDS ===== */
+document.querySelectorAll('.game-sel-card').forEach(card => {
   card.addEventListener('click', () => {
-    const game = card.dataset.game;
-    state.currentGame = game;
-    startGame(game);
+    state.currentGame = card.dataset.game;
+    startGame(card.dataset.game);
   });
 });
 
@@ -62,23 +73,28 @@ document.getElementById('playAgainBtn').addEventListener('click', () => {
   state.words = shuffle([...GRADE_WORDS[state.currentGrade]]);
   startGame(state.currentGame);
 });
-document.getElementById('chooseGameBtn').addEventListener('click', () => {
-  showScreen('gamesScreen');
-});
+document.getElementById('chooseGameBtn').addEventListener('click', () => showScreen('gamesScreen'));
+document.getElementById('homeBtn').addEventListener('click', () => showScreen('homeScreen'));
 
-/* ===== START GAME ===== */
+/* ===================================================================
+   GAME INITIALIZATION
+   =================================================================== */
 function startGame(game) {
   state.score = 0;
   state.round = 0;
   state.total = state.words.length;
 
-  const titles = { match: '🔗 Word Match', context: '🔍 Context Clues', missing: '✏️ Missing Words' };
-  document.getElementById('gameTitle').textContent = titles[game] || game;
-  updateScoreDisplay();
-  updateProgress(0);
+  const gameLabel = { match: '🔗 Word Match', context: '🔍 Context Clues', missing: '✏️ Missing Words' };
+  document.getElementById('gameTitle').textContent = gameLabel[game] || game;
 
-  document.getElementById('resultArea').classList.add('hidden');
-  document.getElementById('gameArea').style.display = 'block';
+  updateScoreDisplay();
+  setProgress(0);
+
+  const resultArea = document.getElementById('resultArea');
+  const gameArea   = document.getElementById('gameArea');
+  resultArea.classList.add('hidden');
+  gameArea.style.display = 'block';
+  gameArea.innerHTML = '';
 
   showScreen('practiceScreen');
 
@@ -87,7 +103,9 @@ function startGame(game) {
   if (game === 'missing') buildMissingRound();
 }
 
-/* ===== UTILITIES ===== */
+/* ===================================================================
+   UTILITIES
+   =================================================================== */
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -101,40 +119,81 @@ function updateScoreDisplay() {
   document.getElementById('totalDisplay').textContent = state.total;
 }
 
-function updateProgress(fraction) {
-  document.getElementById('progressBar').style.width = `${Math.round(fraction * 100)}%`;
+function setProgress(fraction) {
+  const pct = Math.min(100, Math.round(fraction * 100));
+  document.getElementById('progressBar').style.width = `${pct}%`;
+
+  // Move the bee along the track
+  const bee = document.getElementById('progressBee');
+  if (bee) {
+    bee.style.left = `calc(${pct}% )`;
+  }
 }
 
-function showToast(msg, duration = 1600) {
+function showToast(msg, type = '') {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
-  toast.classList.add('show');
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => toast.classList.remove('show'), duration);
+  toast.className = 'toast show' + (type ? ` toast-${type}` : '');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.className = 'toast'; }, 1800);
 }
 
-/* ===== MATCH GAME ===== */
+function showScorePop(text, x, y) {
+  const el = document.createElement('div');
+  el.className = 'score-pop';
+  el.textContent = text;
+  el.style.left = `${x}px`;
+  el.style.top  = `${y}px`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+/* ===================================================================
+   CONFETTI
+   =================================================================== */
+function launchConfetti() {
+  const container = document.getElementById('confettiContainer');
+  const colors = ['#FFD60A','#FF9500','#FF6B35','#00C897','#4B7BEC','#8854D0','#E84393','#EF476F'];
+  const count = 90;
+
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left        = `${Math.random() * 100}%`;
+    piece.style.width       = `${6 + Math.random() * 10}px`;
+    piece.style.height      = `${6 + Math.random() * 10}px`;
+    piece.style.background  = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '3px';
+    piece.style.animationDuration  = `${1.8 + Math.random() * 2.4}s`;
+    piece.style.animationDelay     = `${Math.random() * 0.8}s`;
+    container.appendChild(piece);
+  }
+  setTimeout(() => { container.innerHTML = ''; }, 5000);
+}
+
+/* ===================================================================
+   MATCH GAME
+   =================================================================== */
 function buildMatchGame() {
-  state.matchState = { selectedWord: null, selectedDef: null, matched: new Set(), wrong: null };
+  state.matchState = { selectedWord: null, selectedDef: null, matched: new Set() };
   const words = state.words;
 
-  const wordItems = shuffle(words.map(w => ({ id: w.word, label: w.word, type: 'word' })));
-  const defItems  = shuffle(words.map(w => ({ id: w.word, label: w.definition, type: 'def' })));
+  const wordItems = shuffle(words.map(w => ({ id: w.word, label: w.word })));
+  const defItems  = shuffle(words.map(w => ({ id: w.word, label: w.definition })));
 
-  const html = `
-    <p class="match-intro">Click a word, then click its matching definition!</p>
-    <div class="match-columns">
+  document.getElementById('gameArea').innerHTML = `
+    <p class="match-intro">🐝 Click a <strong>word</strong> on the left, then click its <strong>matching definition</strong> on the right!</p>
+    <div class="match-grid">
       <div>
-        <div class="match-col-title">Words</div>
-        ${wordItems.map(item => `<div class="match-item" data-id="${item.id}" data-type="word">${item.label}</div>`).join('')}
+        <div class="match-col-label">📝 Words</div>
+        ${wordItems.map(w => `<div class="match-item" data-id="${w.id}" data-type="word">${w.label}</div>`).join('')}
       </div>
       <div>
-        <div class="match-col-title">Definitions</div>
-        ${defItems.map(item => `<div class="match-item" data-id="${item.id}" data-type="def">${item.label}</div>`).join('')}
+        <div class="match-col-label">📖 Definitions</div>
+        ${defItems.map(d => `<div class="match-item" data-id="${d.id}" data-type="def">${d.label}</div>`).join('')}
       </div>
     </div>
   `;
-  document.getElementById('gameArea').innerHTML = html;
 
   document.querySelectorAll('.match-item').forEach(el => {
     el.addEventListener('click', handleMatchClick);
@@ -142,11 +201,11 @@ function buildMatchGame() {
 }
 
 function handleMatchClick(e) {
-  const el = e.currentTarget;
-  if (el.classList.contains('matched') || el.classList.contains('wrong')) return;
-
-  const ms = state.matchState;
+  const el   = e.currentTarget;
+  const ms   = state.matchState;
   const type = el.dataset.type;
+
+  if (el.classList.contains('matched') || el.classList.contains('wrong-flash')) return;
 
   if (type === 'word') {
     if (ms.selectedWord) ms.selectedWord.classList.remove('selected');
@@ -159,81 +218,79 @@ function handleMatchClick(e) {
   }
 
   if (ms.selectedWord && ms.selectedDef) {
-    const wordId = ms.selectedWord.dataset.id;
-    const defId  = ms.selectedDef.dataset.id;
+    const wEl = ms.selectedWord;
+    const dEl = ms.selectedDef;
 
-    if (wordId === defId) {
-      ms.selectedWord.classList.remove('selected');
-      ms.selectedDef.classList.remove('selected');
-      ms.selectedWord.classList.add('matched');
-      ms.selectedDef.classList.add('matched');
-      ms.matched.add(wordId);
-      ms.selectedWord.innerHTML += ' ✓';
-      state.score++;
-      updateScoreDisplay();
-      updateProgress(ms.matched.size / state.words.length);
-      showToast('✅ Correct!');
-
-      if (ms.matched.size === state.words.length) {
-        setTimeout(() => showResult(), 600);
-      }
+    if (wEl.dataset.id === dEl.dataset.id) {
+      // Correct match
+      wEl.classList.remove('selected');
+      dEl.classList.remove('selected');
+      wEl.classList.add('matched');
+      dEl.classList.add('matched');
+      wEl.innerHTML += ' ✓';
+      ms.matched.add(wEl.dataset.id);
       ms.selectedWord = null;
       ms.selectedDef  = null;
-    } else {
-      ms.selectedWord.classList.remove('selected');
-      ms.selectedDef.classList.remove('selected');
-      ms.selectedWord.classList.add('wrong');
-      ms.selectedDef.classList.add('wrong');
-      showToast('❌ Try again!');
 
-      const wEl = ms.selectedWord;
-      const dEl = ms.selectedDef;
+      state.score++;
+      updateScoreDisplay();
+      setProgress(ms.matched.size / state.words.length);
+      showToast('✅ Match! Well done!', 'correct');
+
+      const rect = wEl.getBoundingClientRect();
+      showScorePop('+1 ⭐', rect.left + rect.width / 2, rect.top + window.scrollY);
+
+      if (ms.matched.size === state.words.length) {
+        setTimeout(showResult, 700);
+      }
+    } else {
+      // Wrong match
+      wEl.classList.remove('selected');
+      dEl.classList.remove('selected');
+      wEl.classList.add('wrong-flash');
+      dEl.classList.add('wrong-flash');
+      showToast('❌ Not a match — try again!', 'wrong');
+
       setTimeout(() => {
-        wEl.classList.remove('wrong');
-        dEl.classList.remove('wrong');
-      }, 600);
+        wEl.classList.remove('wrong-flash');
+        dEl.classList.remove('wrong-flash');
+      }, 620);
       ms.selectedWord = null;
       ms.selectedDef  = null;
     }
   }
 }
 
-/* ===== CONTEXT CLUES GAME ===== */
+/* ===================================================================
+   CONTEXT CLUES GAME
+   =================================================================== */
 function buildContextRound() {
-  if (state.round >= state.words.length) {
-    showResult();
-    return;
-  }
+  if (state.round >= state.words.length) { showResult(); return; }
+
   const w = state.words[state.round];
-  updateProgress(state.round / state.words.length);
+  setProgress(state.round / state.words.length);
 
-  const choices = w.contextChoices.map((c, i) => ({
-    text: c,
-    index: i,
-    isCorrect: i === w.contextAnswer,
-  }));
-
-  const sentenceWithHighlight = w.contextSentence.replace(
-    new RegExp(`\\b${w.word}\\b`, 'i'),
+  const sentenceHighlighted = w.contextSentence.replace(
+    new RegExp(`\\b${escapeRegex(w.word)}\\b`, 'i'),
     match => `<span class="highlight-word">${match}</span>`
   );
 
-  const html = `
+  const choicesHtml = w.contextChoices.map((text, i) => `
+    <button class="choice-btn" data-index="${i}" data-correct="${i === w.contextAnswer}">
+      <span class="choice-letter">${String.fromCharCode(65 + i)}</span>
+      <span>${text}</span>
+    </button>
+  `).join('');
+
+  document.getElementById('gameArea').innerHTML = `
     <div class="context-card">
-      <div class="context-round-label">Round ${state.round + 1} of ${state.words.length}</div>
-      <div class="context-sentence">${sentenceWithHighlight}</div>
+      <div class="round-label">🔍 Round ${state.round + 1} of ${state.words.length}</div>
+      <div class="context-sentence-box">${sentenceHighlighted}</div>
       <div class="context-question">${w.contextQuestion}</div>
-      <div class="context-choices">
-        ${choices.map((c, i) => `
-          <button class="choice-btn" data-index="${c.index}" data-correct="${c.isCorrect}">
-            <span style="font-weight:900;margin-right:8px;">${String.fromCharCode(65+i)}.</span>${c.text}
-          </button>
-        `).join('')}
-      </div>
-      <div class="feedback-overlay" id="contextFeedback"></div>
+      <div class="context-choices">${choicesHtml}</div>
+      <div class="feedback-box" id="ctxFeedback"></div>
     </div>
   `;
-  document.getElementById('gameArea').innerHTML = html;
 
   document.querySelectorAll('.choice-btn').forEach(btn => {
     btn.addEventListener('click', handleContextChoice);
@@ -241,131 +298,154 @@ function buildContextRound() {
 }
 
 function handleContextChoice(e) {
-  const btn = e.currentTarget;
+  const btn       = e.currentTarget;
   const isCorrect = btn.dataset.correct === 'true';
-  const allBtns = document.querySelectorAll('.choice-btn');
+  const w         = state.words[state.round];
 
-  allBtns.forEach(b => {
+  document.querySelectorAll('.choice-btn').forEach(b => {
     b.disabled = true;
     if (b.dataset.correct === 'true') b.classList.add('correct');
   });
 
-  const feedback = document.getElementById('contextFeedback');
   if (isCorrect) {
     btn.classList.add('correct');
     state.score++;
     updateScoreDisplay();
-    feedback.innerHTML = `<span class="feedback-correct">🎉 Correct! Great job!</span>`;
-    showToast('✅ Correct!');
+    showToast('🎉 Correct! Great job!', 'correct');
+    document.getElementById('ctxFeedback').innerHTML = `
+      <span class="feedback-text correct">🎉 That's right! Great job!</span>
+    `;
   } else {
     btn.classList.add('incorrect');
-    const correctText = state.words[state.round].contextChoices[state.words[state.round].contextAnswer];
-    feedback.innerHTML = `<span class="feedback-wrong">❌ Not quite. The answer is: "${correctText}"</span>`;
-    showToast('❌ Try again next time!');
+    showToast('❌ Not quite — keep going!', 'wrong');
+    document.getElementById('ctxFeedback').innerHTML = `
+      <span class="feedback-text wrong">❌ The answer is: "${w.contextChoices[w.contextAnswer]}"</span>
+    `;
   }
 
   state.round++;
-  feedback.innerHTML += `<button class="next-btn" id="nextContextBtn">${state.round >= state.words.length ? 'See Results 🏆' : 'Next →'}</button>`;
-  document.getElementById('nextContextBtn').addEventListener('click', buildContextRound);
+  const isLast = state.round >= state.words.length;
+  document.getElementById('ctxFeedback').innerHTML += `
+    <button class="next-btn" id="nextCtxBtn">${isLast ? '🏆 See Results' : 'Next Question →'}</button>
+  `;
+  document.getElementById('nextCtxBtn').addEventListener('click', buildContextRound);
 }
 
-/* ===== MISSING WORDS GAME ===== */
+/* ===================================================================
+   MISSING WORDS GAME
+   =================================================================== */
 function buildMissingRound() {
-  if (state.round >= state.words.length) {
-    showResult();
-    return;
-  }
-  const w = state.words[state.round];
-  updateProgress(state.round / state.words.length);
+  if (state.round >= state.words.length) { showResult(); return; }
 
-  const correctWord = w.word;
+  const w           = state.words[state.round];
   const distractors = getDistractors(state.words, state.round, 3);
-  const choices = shuffle([correctWord, ...distractors]);
+  const choices     = shuffle([w.word, ...distractors]);
 
-  const displaySentence = w.sentence.replace('___', `<span class="missing-blank">_____</span>`);
+  setProgress(state.round / state.words.length);
 
-  const html = `
+  const sentenceHtml = w.sentence.replace(
+    '___',
+    '<span class="missing-blank">_____</span>'
+  );
+
+  document.getElementById('gameArea').innerHTML = `
     <div class="missing-card">
-      <div class="context-round-label">Round ${state.round + 1} of ${state.words.length}</div>
-      <div class="missing-sentence">${displaySentence}</div>
-      <div class="missing-choices">
-        ${choices.map(c => `<button class="word-choice-btn" data-word="${c}">${c}</button>`).join('')}
+      <div class="round-label">✏️ Round ${state.round + 1} of ${state.words.length}</div>
+      <div class="missing-sentence">${sentenceHtml}</div>
+      <div class="word-choices">
+        ${choices.map(c => `<button class="word-chip" data-word="${c}">${c}</button>`).join('')}
       </div>
-      <div class="feedback-overlay" id="missingFeedback"></div>
+      <div class="feedback-box" id="msFeedback"></div>
     </div>
   `;
-  document.getElementById('gameArea').innerHTML = html;
 
-  document.querySelectorAll('.word-choice-btn').forEach(btn => {
+  document.querySelectorAll('.word-chip').forEach(btn => {
     btn.addEventListener('click', handleMissingChoice);
   });
 }
 
 function handleMissingChoice(e) {
-  const btn = e.currentTarget;
+  const btn    = e.currentTarget;
   const chosen = btn.dataset.word;
   const correct = state.words[state.round].word;
-  const allBtns = document.querySelectorAll('.word-choice-btn');
 
-  allBtns.forEach(b => {
+  document.querySelectorAll('.word-chip').forEach(b => {
     b.disabled = true;
     if (b.dataset.word === correct) b.classList.add('correct');
   });
 
-  const feedback = document.getElementById('missingFeedback');
   if (chosen === correct) {
     btn.classList.add('correct');
     state.score++;
     updateScoreDisplay();
-    feedback.innerHTML = `<span class="feedback-correct">🎉 That's right! "${correct}" fits perfectly!</span>`;
-    showToast('✅ Correct!');
+    showToast(`✅ "${correct}" is right!`, 'correct');
+    document.getElementById('msFeedback').innerHTML = `
+      <span class="feedback-text correct">🎉 Correct! "${correct}" fits perfectly!</span>
+    `;
+    const rect = btn.getBoundingClientRect();
+    showScorePop('+1 ⭐', rect.left + rect.width / 2, rect.top + window.scrollY - 10);
   } else {
     btn.classList.add('incorrect');
-    feedback.innerHTML = `<span class="feedback-wrong">❌ The correct word is "${correct}"</span>`;
-    showToast('❌ Keep trying!');
+    showToast(`❌ The answer is "${correct}"`, 'wrong');
+    document.getElementById('msFeedback').innerHTML = `
+      <span class="feedback-text wrong">❌ The correct word is "${correct}"</span>
+    `;
   }
 
   state.round++;
-  feedback.innerHTML += `<button class="next-btn" id="nextMissingBtn">${state.round >= state.words.length ? 'See Results 🏆' : 'Next →'}</button>`;
-  document.getElementById('nextMissingBtn').addEventListener('click', buildMissingRound);
+  const isLast = state.round >= state.words.length;
+  document.getElementById('msFeedback').innerHTML += `
+    <button class="next-btn" id="nextMsBtn">${isLast ? '🏆 See Results' : 'Next Sentence →'}</button>
+  `;
+  document.getElementById('nextMsBtn').addEventListener('click', buildMissingRound);
 }
 
 function getDistractors(words, currentIdx, count) {
-  const others = words.filter((_, i) => i !== currentIdx).map(w => w.word);
-  const shuffled = shuffle(others);
-  return shuffled.slice(0, count);
+  const pool    = words.filter((_, i) => i !== currentIdx).map(w => w.word);
+  return shuffle(pool).slice(0, count);
 }
 
-/* ===== RESULTS ===== */
+/* ===================================================================
+   RESULTS
+   =================================================================== */
 function showResult() {
   document.getElementById('gameArea').style.display = 'none';
   document.getElementById('resultArea').classList.remove('hidden');
-  updateProgress(1);
+  setProgress(1);
+  updateScoreDisplay();
 
   const pct = state.total > 0 ? state.score / state.total : 0;
   let title, message, stars;
 
   if (pct === 1) {
-    title = '🏆 Perfect Score!';
-    message = `Amazing! You got all ${state.total} correct. You're a spelling champion!`;
-    stars = '⭐⭐⭐';
-  } else if (pct >= 0.7) {
-    title = '🌟 Great Job!';
-    message = `You scored ${state.score} out of ${state.total}. Keep it up, you're almost there!`;
-    stars = '⭐⭐';
-  } else if (pct >= 0.4) {
-    title = '🐝 Good Try!';
+    title   = '🏆 Perfect Score!';
+    message = `Amazing! You got all ${state.total} correct. You're a true Spelling Champion!`;
+    stars   = '⭐⭐⭐';
+    launchConfetti();
+  } else if (pct >= 0.75) {
+    title   = '🌟 Awesome Job!';
+    message = `You scored ${state.score} out of ${state.total}. Fantastic work — keep buzzing!`;
+    stars   = '⭐⭐';
+  } else if (pct >= 0.5) {
+    title   = '🐝 Good Try!';
     message = `You scored ${state.score} out of ${state.total}. Practice makes perfect — give it another buzz!`;
-    stars = '⭐';
+    stars   = '⭐';
   } else {
-    title = '💪 Keep Practicing!';
+    title   = '💪 Keep Practicing!';
     message = `You scored ${state.score} out of ${state.total}. Don't give up — every bee learns to fly!`;
-    stars = '';
+    stars   = '';
   }
 
-  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultTitle').textContent   = title;
   document.getElementById('resultMessage').textContent = message;
-  document.getElementById('resultStars').textContent = stars;
+  document.getElementById('resultStars').textContent   = stars;
+}
+
+/* ===================================================================
+   HELPERS
+   =================================================================== */
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /* ===== INIT ===== */
