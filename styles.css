@@ -211,7 +211,7 @@ body {
 .logo-text { line-height: 1.1; }
 
 .logo-title {
-  font-family: 'Fredoka One', cursive;
+  font-family: var(--display);
   font-size: 1.6rem;
   color: var(--bee-black);
   letter-spacing: -0.5px;
@@ -308,7 +308,7 @@ body {
 }
 
 .hero-title {
-  font-family: 'Fredoka One', cursive;
+  font-family: var(--display);
   font-size: 3.2rem;
   line-height: 1.1;
   color: var(--bee-black);
@@ -354,7 +354,7 @@ body {
 
 /* ===== SECTION HEADINGS ===== */
 .section-heading {
-  font-family: 'Fredoka One', cursive;
+  font-family: var(--display);
   font-size: 1.9rem;
   color: var(--bee-black);
   text-align: center;
@@ -425,7 +425,7 @@ body {
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
 }
 .preview-card h4 {
-  font-family: 'Fredoka One', cursive;
+  font-family: var(--display);
   font-size: 1.35rem;
   color: var(--text-dark);
   margin-bottom: 8px;
@@ -536,7 +536,7 @@ body {
 
 .gc-icon { font-size: 2.6rem; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.1)); }
 .gc-name {
-  font-family: 'Fredoka One', cursive;
+  font-family: var(--display);
   font-size: 1.1rem;
   color: var(--text-dark);
   line-height: 1.2;
@@ -628,7 +628,7 @@ body {
 }
 
 .screen-title {
-  font-family: 'Fredoka One', cursive;
+  font-family: var(--display);
   font-size: 1.7rem;
   color: var(--text-dark);
   flex: 1;
@@ -769,7 +769,7 @@ body {
   border: 1.5px solid var(--honey-mid);
 }
 .game-sel-card h3 {
-  font-family: 'Fredoka One', cursive;
+  font-family: var(--display);
   font-size: 1.45rem;
   color: var(--text-dark);
   margin-bottom: 8px;
@@ -1151,7 +1151,7 @@ body {
 }
 
 .result-title {
-  font-family: 'Fredoka One', cursive;
+  font-family: var(--display);
   font-size: 2.4rem;
   color: var(--text-dark);
   margin-bottom: 10px;
@@ -1358,7 +1358,7 @@ body {
 .boost-banner:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
 .boost-icon { font-size: 2.8rem; }
 .boost-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.boost-text strong { font-family: 'Fredoka One', cursive; font-weight: 400; font-size: 1.4rem; color: var(--purple); }
+.boost-text strong { font-family: var(--display); font-weight: 400; font-size: 1.4rem; color: var(--purple); }
 .boost-text span { color: var(--text-mid); font-weight: 600; }
 .boost-go {
   background: var(--purple);

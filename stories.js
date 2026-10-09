@@ -269,8 +269,8 @@ function finishDrill(skill, items, results) {
   S.mode = null;
 }
 
-$('#quitDrill').addEventListener('click', () => {
-  if (confirm('Leave this drill? Your answers so far won\'t be saved.')) renderStart();
+$('#quitDrill').addEventListener('click', async () => {
+  if (await askConfirm('Leave this drill? Your answers so far won\'t be saved.', { confirmLabel: 'Leave', cancelLabel: 'Keep going' })) renderStart();
 });
 
 function syncGrade() {
@@ -668,8 +668,8 @@ $('#toolRead').addEventListener('click', async () => {
   }
   stopSpeech();
 });
-$('#quitTest').addEventListener('click', () => {
-  if (confirm('Leave this passage? Answers you haven\'t submitted will be lost.')) renderStart();
+$('#quitTest').addEventListener('click', async () => {
+  if (await askConfirm('Leave this passage? Answers you haven\'t submitted will be lost.', { confirmLabel: 'Leave', cancelLabel: 'Keep reading' })) renderStart();
 });
 
 /* ===================================================================
@@ -696,8 +696,8 @@ function renderReview() {
   $('#qbuttons').innerHTML = `<button class="btn-outline" id="backToQ">← Back to questions</button>
     <button class="btn-primary" id="submitPart">${S.pIndex === 0 ? 'Submit Part 1 →' : 'Submit and see results 🏁'}</button>`;
   $('#backToQ').addEventListener('click', () => { S.qIndex = p.questions.length - 1; renderQuestion(); });
-  $('#submitPart').addEventListener('click', () => {
-    if (missing && !confirm(`${missing} question${missing === 1 ? ' is' : 's are'} not answered. Submit anyway?`)) return;
+  $('#submitPart').addEventListener('click', async () => {
+    if (missing && !await askConfirm(`${missing} question${missing === 1 ? ' is' : 's are'} not answered. Submit anyway?`, { confirmLabel: 'Submit anyway', cancelLabel: 'Go back' })) return;
     submitPart();
   });
   $$('#qnav .sc-qpill').forEach(x => x.classList.remove('now'));
@@ -910,14 +910,12 @@ function finishCheckup() {
       <p class="sc-disclaimer">This is practice in the style of school reading check-ups like DRC BEACON, with original passages. The level names are a guide for practice only. They are not an official score and do not predict a state test result.</p>
       <div class="row-btns sc-row">
         <button class="btn-primary" id="homeBtn">📚 Back to stories</button>
-        <button class="btn-secondary" id="printBtn">🖨️ Print report</button>
         <button class="btn-outline" id="historyBtn">📊 All results</button>
       </div>
     </section>`;
   $('#homeBtn').addEventListener('click', renderStart);
   const focusSkill = Comprehension.drillFor(weakest, Comprehension.bandFor(S.reader.grade));
   $('#focusDrill').addEventListener('click', () => startDrill(focusSkill));
-  $('#printBtn').addEventListener('click', () => { $$('.sc-item-review').forEach(d => { d.open = true; }); window.print(); });
   $('#historyBtn').addEventListener('click', renderHistory);
   S.mode = null;
   showScreen('reportScreen');

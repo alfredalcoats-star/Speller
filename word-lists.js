@@ -177,9 +177,9 @@ const WordLists = (() => {
 
       container.querySelector('#wlNew').addEventListener('click', () => open(null));
       container.querySelectorAll("[data-wl-edit]").forEach(b => b.addEventListener('click', () => open(get(b.dataset.wlEdit))));
-      container.querySelectorAll("[data-wl-del]").forEach(b => b.addEventListener('click', () => {
+      container.querySelectorAll("[data-wl-del]").forEach(b => b.addEventListener('click', async () => {
         const list = get(b.dataset.wlDel);
-        if (!list || !confirm(`Delete the list "${list.name}"? This can't be undone.`)) return;
+        if (!list || !await askConfirm(`Delete the list "${list.name}"? This can't be undone.`, { confirmLabel: 'Delete list', danger: true })) return;
         remove(list.id);
         render();
         onChange?.();

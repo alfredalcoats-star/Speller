@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Story Check — SpellingHive</title>
+  <title>Story Check</title>
   <meta name="description" content="Read stories and informational passages for grades K-8 and answer test-style questions, with a skill-by-skill report for grown-ups." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&family=Lexend:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Lexend:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="stories.css" />
+  <link rel="stylesheet" href="theme.css" />
 </head>
-<body>
+<body data-app="story">
 
-<div class="hc-bg" aria-hidden="true"></div>
 <!-- ===== HEADER ===== -->
 <header class="site-header">
-  <div class="header-inner">
-    <a class="logo-area" href="index.html">
-      <div class="bee-wrap">
-        <svg class="bee" viewBox="0 0 160 190" xmlns="http://www.w3.org/2000/svg" aria-label="Happy bee mascot">
+  <div class="suite-bar">
+    <div class="suite-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark"><svg class="bee" viewBox="0 0 160 190" xmlns="http://www.w3.org/2000/svg" aria-label="Happy bee mascot">
           <!-- Wings (behind body) -->
           <ellipse cx="42" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-left"/>
           <ellipse cx="118" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-right"/>
@@ -59,20 +59,24 @@
           <!-- Tiny heart on antenna -->
           <text x="38" y="10" font-size="8" text-anchor="middle">♥</text>
           <text x="114" y="10" font-size="8" text-anchor="middle">♥</text>
-        </svg>
-      </div>
-      <div class="logo-text">
-        <div class="logo-title">Story<span>Check</span></div>
-        <div class="logo-tag">Read it. Think it. Prove it! 📚</div>
-      </div>
-    </a>
-
-    <nav class="top-nav" aria-label="Main navigation">
-      <a class="nav-btn" href="index.html">🏠 SpellingHive</a>
-      <a class="nav-btn" href="reading.html">📖 Reading Boost</a>
-      <button class="nav-btn" id="navStart">📚 Stories</button>
-      <button class="nav-btn" id="navResults">📊 Grown-Ups</button>
-    </nav>
+        </svg></span>
+        <span class="brand-text"><span class="brand-name">SpellingHive</span><span class="brand-sub">Reading &amp; spelling, grades K–8</span></span>
+      </a>
+      <nav class="suite-nav" aria-label="SpellingHive tools">
+        <a class="suite-link" data-app="spell" href="index.html"><span class="app-dot" aria-hidden="true"></span>Spelling Games</a>
+        <a class="suite-link" data-app="reading" href="reading.html"><span class="app-dot" aria-hidden="true"></span>Reading Boost</a>
+        <a class="suite-link" data-app="story" href="stories.html" aria-current="page"><span class="app-dot" aria-hidden="true"></span>Story Check</a>
+      </nav>
+    </div>
+  </div>
+  <div class="sub-bar">
+    <div class="sub-inner">
+      <span class="sub-title">Story Check</span>
+      <nav class="top-nav" aria-label="Story Check sections">
+        <button class="nav-btn" id="navStart">Stories</button>
+        <button class="nav-btn" id="navResults">Grown-Ups</button>
+      </nav>
+    </div>
   </div>
 </header>
 
@@ -80,13 +84,13 @@
 <main id="startScreen" class="screen">
   <div class="inner-wrap sc-wrap">
     <section class="sc-hero">
-      <div class="hero-badge">✨ Grades K–8 · Stories &amp; nonfiction · Test-style questions ✨</div>
+      <div class="hero-badge">Grades K–8 · Stories &amp; nonfiction · Test-style questions</div>
       <h1 class="hero-title">Story Check</h1>
       <p class="hero-sub">Read a passage, then answer questions the way they appear on school reading check-ups like BEACON: multiple choice, two-part Part A / Part B questions, "choose two," click the sentence that proves it, put events in order, and short answers.</p>
     </section>
 
     <section class="sc-panel">
-      <h2 class="section-heading">👋 Who is reading?</h2>
+      <h2 class="section-heading">Who is reading?</h2>
       <div class="sc-reader-row">
         <label>Reader
           <select id="readerSelect"></select>
@@ -113,13 +117,13 @@
     </section>
 
     <section class="sc-panel">
-      <h2 class="section-heading">🧩 Skill Drills</h2>
+      <h2 class="section-heading">Skill Drills</h2>
       <p class="section-sub">Quick practice on one reading skill at a time: six short texts, each with a question. Inference drills ask you to prove your answer with a clue.</p>
       <div id="drillChips" class="sc-drill-chips"></div>
     </section>
 
     <section class="sc-panel">
-      <h2 class="section-heading">📚 Story Library</h2>
+      <h2 class="section-heading">Story Library</h2>
       <p class="section-sub">⭐ marks your grade. Tap a passage to practice it.</p>
       <div id="library" class="sc-library"></div>
     </section>
@@ -177,12 +181,31 @@
 
 <footer class="site-footer">
   <div class="footer-inner">
-    <div class="footer-bee">🐝</div>
-    <div class="footer-text"><strong>Story Check</strong> — practice in the style of school reading check-ups. Not an official test; results are saved on this device only.</div>
-    <div class="footer-links"><span>18 Passages</span><span>•</span><span>Grades K–8</span></div>
+    <div class="footer-brand">
+      <b>SpellingHive</b>
+      <p>Free reading and spelling practice for grades K–8, built on structured literacy and designed for every kind of learner.</p>
+    </div>
+    <div class="footer-col">
+      <h4>For schools &amp; families</h4>
+      <ul>
+        <li>No accounts or sign-ups</li>
+        <li>No ads</li>
+        <li>Progress stays on this device</li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Tools</h4>
+      <ul>
+        <li><a href="index.html">Spelling Games</a></li>
+        <li><a href="reading.html">Reading Boost</a></li>
+        <li><a href="stories.html">Story Check</a></li>
+      </ul>
+    </div>
   </div>
+  <p class="footer-note">Story Check uses original passages in the style of school reading check-ups. It is not affiliated with DRC or any state test, and levels are for practice only.</p>
 </footer>
 
+<script src="ui.js"></script>
 <script src="comprehension.js"></script>
 <script src="stories-data.js"></script>
 <script src="stories.js"></script>

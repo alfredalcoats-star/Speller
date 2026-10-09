@@ -232,8 +232,8 @@ $('#navMap').addEventListener('click', () => activeProfile() ? renderMap() : ren
 $('#navParent').addEventListener('click', renderParent);
 $('#switchReader').addEventListener('click', renderProfiles);
 $('#backFromParent').addEventListener('click', () => activeProfile() ? renderMap() : renderProfiles());
-$('#quitLesson').addEventListener('click', () => {
-  if (confirm('Stop this lesson? Your progress in this lesson will not be saved.')) renderMap();
+$('#quitLesson').addEventListener('click', async () => {
+  if (await askConfirm('Stop this lesson? Progress in this lesson won\'t be saved.', { confirmLabel: 'Stop lesson', cancelLabel: 'Keep going' })) renderMap();
 });
 
 /* ===================================================================
@@ -1555,9 +1555,9 @@ function renderParent() {
     applySettings();
     renderStartChoice(activeProfile());
   }));
-  $$('[data-del]').forEach(btn => btn.addEventListener('click', () => {
+  $$('[data-del]').forEach(btn => btn.addEventListener('click', async () => {
     const p = store.profiles[btn.dataset.del];
-    if (!confirm(`Remove ${p.name} and all their progress? This cannot be undone.`)) return;
+    if (!await askConfirm(`Remove ${p.name} and all their progress? This can't be undone.`, { confirmLabel: 'Remove reader', danger: true })) return;
     delete store.profiles[p.id];
     if (store.activeId === p.id) store.activeId = null;
     saveStore();

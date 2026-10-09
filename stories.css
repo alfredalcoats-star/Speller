@@ -28,7 +28,7 @@ a.nav-btn { text-decoration: none; display: inline-block; }
 .sc-hero { text-align: center; background: linear-gradient(135deg, var(--white), var(--purple-light)); }
 .sc-hero .hero-title { margin: 14px 0 10px; }
 .sc-hero .hero-sub { margin: 0 auto; max-width: 720px; }
-.sc-panel h3 { font-family: 'Fredoka One', cursive; font-weight: 400; font-size: 1.35rem; margin: 18px 0 10px; }
+.sc-panel h3 { font-family: var(--display); font-weight: 400; font-size: 1.35rem; margin: 18px 0 10px; }
 .sc-panel h4 { margin: 16px 0 8px; }
 
 .sc-reader-row { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
@@ -50,7 +50,7 @@ a.nav-btn { text-decoration: none; display: inline-block; }
 }
 .sc-mode:hover { transform: translateY(-4px); }
 .sc-mode.practice { border-color: var(--teal); }
-.sc-mode b { font-family: 'Fredoka One', cursive; font-weight: 400; font-size: 1.5rem; }
+.sc-mode b { font-family: var(--display); font-weight: 400; font-size: 1.5rem; }
 .sc-mode span { color: var(--text-mid); font-weight: 600; line-height: 1.5; }
 .sc-mode-icon { font-size: 2.4rem; }
 .sc-mode .sc-mode-go { color: var(--purple); font-weight: 900; }
@@ -97,7 +97,7 @@ a.nav-btn { text-decoration: none; display: inline-block; }
   font-family: var(--passage-font); font-size: var(--passage-size); line-height: 1.85;
 }
 .sc-passage-head { margin-bottom: 12px; }
-.sc-passage-head h3 { font-family: 'Fredoka One', cursive; font-weight: 400; font-size: 1.6rem; }
+.sc-passage-head h3 { font-family: var(--display); font-weight: 400; font-size: 1.6rem; }
 .sc-genre {
   display: inline-block; background: var(--purple-light); color: var(--purple);
   border-radius: 50px; padding: 3px 12px; font-size: .8rem; font-weight: 900; font-family: 'Nunito', sans-serif;
@@ -204,7 +204,7 @@ body.sc-line .sc-para { cursor: pointer; }
 .sc-qbuttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
 .sc-qbuttons button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 
-.sc-review h3 { font-family: 'Fredoka One', cursive; font-weight: 400; font-size: 1.4rem; margin-bottom: 8px; }
+.sc-review h3 { font-family: var(--display); font-weight: 400; font-size: 1.4rem; margin-bottom: 8px; }
 .sc-review p { margin-bottom: 12px; line-height: 1.5; }
 .sc-review-row {
   width: 100%; display: grid; grid-template-columns: 110px 1fr auto; gap: 8px; text-align: left;
@@ -220,7 +220,7 @@ body.sc-line .sc-para { cursor: pointer; }
 .sc-report-top > div:nth-child(2) { flex: 1; }
 .sc-big-icon { font-size: 3.4rem; }
 .sc-level {
-  font-family: 'Fredoka One', cursive; font-size: 1.3rem; border-radius: 50px; padding: 8px 20px;
+  font-family: var(--display); font-size: 1.3rem; border-radius: 50px; padding: 8px 20px;
 }
 .l1 { --lv: #E8590C; --lv-bg: #FFF0E6; }
 .l2 { --lv: #D19A00; --lv-bg: #FFF8D6; }
@@ -229,7 +229,7 @@ body.sc-line .sc-para { cursor: pointer; }
 .sc-level { background: var(--lv-bg); color: var(--lv); }
 .sc-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 18px 0 10px; }
 .sc-kpis div { background: var(--honey-light); border-radius: var(--radius-md); padding: 14px; text-align: center; }
-.sc-kpis b { display: block; font-family: 'Fredoka One', cursive; font-weight: 400; font-size: 1.6rem; }
+.sc-kpis b { display: block; font-family: var(--display); font-weight: 400; font-size: 1.6rem; }
 .sc-kpis span { font-weight: 700; color: var(--text-mid); font-size: .88rem; }
 .sc-note { font-weight: 600; line-height: 1.55; margin: 8px 0; }
 .sc-skill { display: grid; grid-template-columns: 240px 1fr 60px 120px; gap: 10px; align-items: center; margin: 8px 0; font-weight: 700; }

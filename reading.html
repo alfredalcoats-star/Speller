@@ -3,25 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reading Boost — SpellingHive</title>
+  <title>Reading Boost</title>
   <meta name="description" content="A structured, multisensory phonics program that helps kids with dyslexia, ADHD and other learning differences build reading skills fast." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&family=Lexend:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Lexend:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="reading.css" />
+  <link rel="stylesheet" href="theme.css" />
 </head>
-<body>
+<body data-app="reading">
 
-<div class="hc-bg" aria-hidden="true"></div>
 <div id="confettiContainer" class="confetti-container" aria-hidden="true"></div>
 
 <!-- ===== HEADER ===== -->
 <header class="site-header">
-  <div class="header-inner">
-    <a class="logo-area" href="index.html">
-      <div class="bee-wrap">
-        <svg class="bee" viewBox="0 0 160 190" xmlns="http://www.w3.org/2000/svg" aria-label="Happy bee mascot">
+  <div class="suite-bar">
+    <div class="suite-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark"><svg class="bee" viewBox="0 0 160 190" xmlns="http://www.w3.org/2000/svg" aria-label="Happy bee mascot">
           <!-- Wings (behind body) -->
           <ellipse cx="42" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-left"/>
           <ellipse cx="118" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-right"/>
@@ -61,21 +61,25 @@
           <!-- Tiny heart on antenna -->
           <text x="38" y="10" font-size="8" text-anchor="middle">♥</text>
           <text x="114" y="10" font-size="8" text-anchor="middle">♥</text>
-        </svg>
-      </div>
-      <div class="logo-text">
-        <div class="logo-title">Reading<span>Boost</span></div>
-        <div class="logo-tag">Every brain can learn to read! 📖</div>
-      </div>
-    </a>
-
-    <nav class="top-nav" aria-label="Main navigation">
-      <a class="nav-btn" href="index.html">🏠 SpellingHive</a>
-      <a class="nav-btn" href="stories.html">📚 Story Check</a>
-      <button class="nav-btn" id="navMap">🗺️ My Path</button>
-      <button class="nav-btn" id="navParent">👪 Grown-Ups</button>
-      <button class="nav-btn" id="navSettings" aria-haspopup="dialog">⚙️ Reading Helpers</button>
-    </nav>
+        </svg></span>
+        <span class="brand-text"><span class="brand-name">SpellingHive</span><span class="brand-sub">Reading &amp; spelling, grades K–8</span></span>
+      </a>
+      <nav class="suite-nav" aria-label="SpellingHive tools">
+        <a class="suite-link" data-app="spell" href="index.html"><span class="app-dot" aria-hidden="true"></span>Spelling Games</a>
+        <a class="suite-link" data-app="reading" href="reading.html" aria-current="page"><span class="app-dot" aria-hidden="true"></span>Reading Boost</a>
+        <a class="suite-link" data-app="story" href="stories.html"><span class="app-dot" aria-hidden="true"></span>Story Check</a>
+      </nav>
+    </div>
+  </div>
+  <div class="sub-bar">
+    <div class="sub-inner">
+      <span class="sub-title">Reading Boost</span>
+      <nav class="top-nav" aria-label="Reading Boost sections">
+        <button class="nav-btn" id="navMap">My Path</button>
+        <button class="nav-btn" id="navParent">Grown-Ups</button>
+        <button class="nav-btn" id="navSettings" aria-haspopup="dialog">Reading Helpers</button>
+      </nav>
+    </div>
   </div>
 </header>
 
@@ -83,12 +87,12 @@
 <main id="profileScreen" class="screen rb-screen">
   <div class="inner-wrap">
     <section class="rb-hero">
-      <div class="hero-badge">✨ Grades K–8 · Built for dyslexia, ADHD, autism &amp; every kind of learner ✨</div>
+      <div class="hero-badge">Grades K–8 · Built for dyslexia, ADHD, autism &amp; every kind of learner</div>
       <h1 class="hero-title">Reading Boost</h1>
       <p class="hero-sub">Short, step-by-step phonics lessons that use seeing, hearing, saying and touching — the way research shows struggling readers learn best.</p>
     </section>
 
-    <h2 class="section-heading">👋 Who is reading today?</h2>
+    <h2 class="section-heading">Who is reading today?</h2>
     <div id="profileGrid" class="profile-grid"></div>
 
     <form id="newProfileForm" class="new-profile hidden" autocomplete="off">
@@ -236,12 +240,31 @@
 
 <footer class="site-footer">
   <div class="footer-inner">
-    <div class="footer-bee">🐝</div>
-    <div class="footer-text"><strong>Reading Boost</strong> — part of SpellingHive. Progress is saved on this device only.</div>
-    <div class="footer-links"><span>14 Levels · Grades K–8</span><span>•</span><span>Structured Literacy</span></div>
+    <div class="footer-brand">
+      <b>SpellingHive</b>
+      <p>Free reading and spelling practice for grades K–8, built on structured literacy and designed for every kind of learner.</p>
+    </div>
+    <div class="footer-col">
+      <h4>For schools &amp; families</h4>
+      <ul>
+        <li>No accounts or sign-ups</li>
+        <li>No ads</li>
+        <li>Progress stays on this device</li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Tools</h4>
+      <ul>
+        <li><a href="index.html">Spelling Games</a></li>
+        <li><a href="reading.html">Reading Boost</a></li>
+        <li><a href="stories.html">Story Check</a></li>
+      </ul>
+    </div>
   </div>
+  <p class="footer-note">Reading Boost is a practice tool. It does not replace an evaluation or therapy from a reading specialist, speech-language pathologist or school IEP team.</p>
 </footer>
 
+<script src="ui.js"></script>
 <script src="words-data.js"></script>
 <script src="online-words.js"></script>
 <script src="word-lists.js"></script>

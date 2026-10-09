@@ -3,38 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellingHive — Learn to Spell & Read!</title>
+  <title>SpellingHive</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="theme.css" />
 </head>
-<body>
+<body data-app="spell">
 
-<!-- Honeycomb faded background -->
-<div class="hc-bg" aria-hidden="true"></div>
 
-<!-- Floating decorative blobs -->
-<div class="floaters" aria-hidden="true">
-  <div class="floater f1">🌸</div>
-  <div class="floater f2">⭐</div>
-  <div class="floater f3">🌼</div>
-  <div class="floater f4">✨</div>
-  <div class="floater f5">🌟</div>
-  <div class="floater f6">🍯</div>
-</div>
 
 <!-- Confetti container -->
 <div id="confettiContainer" class="confetti-container" aria-hidden="true"></div>
 
 <!-- ===== HEADER ===== -->
 <header class="site-header">
-  <div class="header-inner">
-
-    <!-- Logo + Bee -->
-    <a class="logo-area" href="#" id="logoHome">
-      <div class="bee-wrap" id="heroBee">
-        <svg class="bee" viewBox="0 0 160 190" xmlns="http://www.w3.org/2000/svg" aria-label="Happy bee mascot">
+  <div class="suite-bar">
+    <div class="suite-inner">
+      <a class="brand" href="index.html" id="logoHome">
+        <span class="brand-mark"><svg class="bee" viewBox="0 0 160 190" xmlns="http://www.w3.org/2000/svg" aria-label="Happy bee mascot">
           <!-- Wings (behind body) -->
           <ellipse cx="42" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-left"/>
           <ellipse cx="118" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-right"/>
@@ -74,41 +62,45 @@
           <!-- Tiny heart on antenna -->
           <text x="38" y="10" font-size="8" text-anchor="middle">♥</text>
           <text x="114" y="10" font-size="8" text-anchor="middle">♥</text>
-        </svg>
-      </div>
-      <div class="logo-text">
-        <div class="logo-title">Spelling<span>Hive</span></div>
-        <div class="logo-tag">Buzz your way to better spelling! 🍯</div>
-      </div>
-    </a>
-
-    <!-- Navigation -->
-    <nav class="top-nav" role="navigation" aria-label="Main navigation">
-      <button class="nav-btn active" data-view="home">🏠 Home</button>
-      <button class="nav-btn" data-view="games">🎮 Games</button>
-      <button class="nav-btn" data-view="lists">📝 My Lists</button>
-      <a class="nav-btn" href="reading.html" style="text-decoration:none">📖 Reading Boost</a>
-      <a class="nav-btn" href="stories.html" style="text-decoration:none">📚 Story Check</a>
-    </nav>
+        </svg></span>
+        <span class="brand-text"><span class="brand-name">SpellingHive</span><span class="brand-sub">Reading &amp; spelling, grades K–8</span></span>
+      </a>
+      <nav class="suite-nav" aria-label="SpellingHive tools">
+        <a class="suite-link" data-app="spell" href="index.html" aria-current="page"><span class="app-dot" aria-hidden="true"></span>Spelling Games</a>
+        <a class="suite-link" data-app="reading" href="reading.html"><span class="app-dot" aria-hidden="true"></span>Reading Boost</a>
+        <a class="suite-link" data-app="story" href="stories.html"><span class="app-dot" aria-hidden="true"></span>Story Check</a>
+      </nav>
+    </div>
+  </div>
+  <div class="sub-bar">
+    <div class="sub-inner">
+      <span class="sub-title">Spelling Games</span>
+      <nav class="top-nav" aria-label="Spelling Games sections">
+        <button class="nav-btn active" data-view="home">Home</button>
+        <button class="nav-btn" data-view="games">Games</button>
+        <button class="nav-btn" data-view="lists">My Word Lists</button>
+      </nav>
+    </div>
   </div>
 </header>
 
 <!-- ===== HOME SCREEN ===== -->
 <main id="homeScreen" class="screen active">
 
-  <!-- Hero Banner -->
-  <section class="hero-banner">
-    <div class="hero-content">
-      <div class="hero-badge">✨ Free for All Grades K–8 ✨</div>
-      <h2 class="hero-title">Learn to Spell &amp;<br/>Read with Fun!</h2>
-      <p class="hero-sub">Play word games, match definitions, find context clues, and fill in the blanks. Learning has never been sweeter!</p>
-      <div class="hero-stats">
-        <div class="stat-chip">📚 9 Grade Levels</div>
-        <div class="stat-chip">🎮 6 Game Types</div>
-        <div class="stat-chip">🏆 Earn Stars</div>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Free for grades K–8 · No sign-up</p>
+      <h1 class="hero-title">Spelling and reading practice that feels like play</h1>
+      <p class="hero-sub">Word games for every grade, step-by-step phonics for kids who find reading hard, and story check-ups like the ones at school.</p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="#grades">Pick a grade</a>
+        <a class="btn-secondary" href="reading.html">Start Reading Boost</a>
       </div>
     </div>
-    <div class="hero-bee-large" aria-hidden="true">
+    <div class="hero-art" aria-hidden="true">
+      <div class="hero-sun"></div>
+      <div class="hero-bee">
       <svg viewBox="0 0 200 230" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="50" cy="110" rx="44" ry="26" fill="rgba(186,230,255,0.8)" stroke="#7ec8f0" stroke-width="2" class="wing-left"/>
         <ellipse cx="150" cy="110" rx="44" ry="26" fill="rgba(186,230,255,0.8)" stroke="#7ec8f0" stroke-width="2" class="wing-right"/>
@@ -132,35 +124,39 @@
         <circle cx="54" cy="12" r="9" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
         <path d="M117 48 Q129 28 143 16" stroke="#1a1a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
         <circle cx="146" cy="12" r="9" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
-        <text x="20" y="30" font-size="18" class="sparkle">✨</text>
-        <text x="160" y="24" font-size="14" class="sparkle2">⭐</text>
-        <text x="170" y="60" font-size="12" class="sparkle">🌟</text>
       </svg>
+    </div>
+      <span class="sticker s1">A+</span>
+      <span class="sticker s2">abc</span>
+      <span class="sticker s3">★ 3</span>
     </div>
   </section>
 
-  <!-- Reading Boost promo -->
-  <a class="boost-banner" href="reading.html">
-    <div class="boost-icon">📖</div>
-    <div class="boost-text">
-      <strong>New! Reading Boost</strong>
-      <span>Step-by-step phonics lessons for kids who find reading hard — dyslexia, ADHD and every kind of learner. Read-aloud help, easy-read fonts and progress tracking for grown-ups.</span>
-    </div>
-    <div class="boost-go">Start →</div>
-  </a>
-
-  <a class="boost-banner story-banner" href="stories.html">
-    <div class="boost-icon">📚</div>
-    <div class="boost-text">
-      <strong>New! Story Check</strong>
-      <span>Read stories and nonfiction for grades K–8, then answer questions like the ones on school reading check-ups, with a skills report for grown-ups.</span>
-    </div>
-    <div class="boost-go">Read →</div>
-  </a>
+  <!-- The three tools -->
+  <section class="tools-section" aria-label="SpellingHive tools">
+    <a class="tool-card" data-app="spell" href="#grades">
+      <span class="tool-icon">🐝</span>
+      <span class="tool-name">Spelling Games</span>
+      <span class="tool-desc">Six games for every grade: matching, context clues, spelling, comprehension and inference.</span>
+      <span class="tool-go">Choose a grade</span>
+    </a>
+    <a class="tool-card" data-app="reading" href="reading.html">
+      <span class="tool-icon">📖</span>
+      <span class="tool-name">Reading Boost</span>
+      <span class="tool-desc">Short phonics lessons for dyslexia, ADHD and every kind of learner, with read-aloud help.</span>
+      <span class="tool-go">Start a lesson</span>
+    </a>
+    <a class="tool-card" data-app="story" href="stories.html">
+      <span class="tool-icon">📚</span>
+      <span class="tool-name">Story Check</span>
+      <span class="tool-desc">Stories and nonfiction with test-style questions and a skills report for grown-ups.</span>
+      <span class="tool-go">Read a story</span>
+    </a>
+  </section>
 
   <!-- Game Types Preview -->
   <section class="games-preview-section">
-    <h3 class="section-heading">🎮 Six Ways to Play</h3>
+    <h3 class="section-heading">Six Ways to Play</h3>
     <div class="games-preview-grid">
       <div class="preview-card pc-blue">
         <div class="pc-icon">🔗</div>
@@ -202,8 +198,8 @@
   </section>
 
   <!-- Grade Selection -->
-  <section class="grade-section">
-    <h3 class="section-heading">📚 Choose Your Grade Level</h3>
+  <section class="grade-section" id="grades">
+    <h3 class="section-heading">Choose Your Grade Level</h3>
     <p class="section-sub">Pick your grade to get words and games just right for you!</p>
     <div class="grade-grid">
       <button class="grade-card gc-purple" data-grade="K">
@@ -267,31 +263,30 @@
 
   <!-- Grown-ups' own word lists -->
   <section class="grade-section mylists-section">
-    <h3 class="section-heading">📝 My Word Lists</h3>
+    <h3 class="section-heading">My Word Lists</h3>
     <p class="section-sub">Practice your own words — like this week's spelling list from school!</p>
     <div class="grade-grid" id="homeLists"></div>
   </section>
 
-  <!-- How It Works -->
-  <section class="how-section">
-    <h3 class="section-heading">🌟 How It Works</h3>
-    <div class="how-steps">
-      <div class="how-step">
-        <div class="step-num">1</div>
-        <div class="step-icon">📚</div>
-        <div class="step-text">Pick your grade level</div>
+  <!-- For teachers & families -->
+  <section class="trust-section">
+    <h3 class="section-heading">For teachers &amp; families</h3>
+    <div class="trust-grid">
+      <div class="trust-item">
+        <b>Research-based</b>
+        <p>Reading Boost follows structured literacy: explicit, step-by-step phonics with mastery checks and spaced review.</p>
       </div>
-      <div class="how-arrow">→</div>
-      <div class="how-step">
-        <div class="step-num">2</div>
-        <div class="step-icon">🎮</div>
-        <div class="step-text">Choose a game type</div>
+      <div class="trust-item">
+        <b>Built for every learner</b>
+        <p>Easy-read fonts, color tints, read-aloud, a reading ruler, brain breaks and big tap targets with no dragging.</p>
       </div>
-      <div class="how-arrow">→</div>
-      <div class="how-step">
-        <div class="step-num">3</div>
-        <div class="step-icon">🏆</div>
-        <div class="step-text">Earn stars &amp; celebrate!</div>
+      <div class="trust-item">
+        <b>Private by design</b>
+        <p>No accounts, no ads, nothing to install. Progress and word lists stay in this browser.</p>
+      </div>
+      <div class="trust-item">
+        <b>Your own word lists</b>
+        <p>Add this week's spelling or sight words once, then use them in games and lessons.</p>
       </div>
     </div>
   </section>
@@ -494,20 +489,31 @@
 <!-- Footer -->
 <footer class="site-footer">
   <div class="footer-inner">
-    <div class="footer-bee">🐝</div>
-    <div class="footer-text">
-      <strong>SpellingHive</strong> &copy; 2025 — Making learning as sweet as honey! 🍯
+    <div class="footer-brand">
+      <b>SpellingHive</b>
+      <p>Free reading and spelling practice for grades K–8, built on structured literacy and designed for every kind of learner.</p>
     </div>
-    <div class="footer-links">
-      <span>Grades K–8</span>
-      <span>•</span>
-      <span>6 Game Types</span>
-      <span>•</span>
-      <span>Free Forever</span>
+    <div class="footer-col">
+      <h4>For schools &amp; families</h4>
+      <ul>
+        <li>No accounts or sign-ups</li>
+        <li>No ads</li>
+        <li>Progress stays on this device</li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Tools</h4>
+      <ul>
+        <li><a href="index.html">Spelling Games</a></li>
+        <li><a href="reading.html">Reading Boost</a></li>
+        <li><a href="stories.html">Story Check</a></li>
+      </ul>
     </div>
   </div>
+  <p class="footer-note">Story Check and Reading Boost are practice tools, not official tests or a substitute for a reading specialist.</p>
 </footer>
 
+<script src="ui.js"></script>
 <script src="words-data.js"></script>
 <script src="online-words.js"></script>
 <script src="word-lists.js"></script>

@@ -88,7 +88,7 @@ a.nav-btn { text-decoration: none; display: inline-block; }
   margin-bottom: 28px;
   display: grid; gap: 10px;
 }
-.new-profile h3 { font-family: 'Fredoka One', cursive; font-weight: 400; }
+.new-profile h3 { font-family: var(--display); font-weight: 400; }
 .new-profile label { font-weight: 800; }
 .new-profile input {
   font: inherit; font-size: 1.2rem;
@@ -135,7 +135,7 @@ a.nav-btn { text-decoration: none; display: inline-block; }
 .today-main { display: flex; gap: 18px; align-items: center; }
 .today-icon { font-size: 3.4rem; }
 .today-label { font-weight: 800; color: var(--amber); text-transform: uppercase; font-size: .8rem; letter-spacing: .08em; }
-.today-title { font-family: 'Fredoka One', cursive; font-size: 1.6rem; }
+.today-title { font-family: var(--display); font-size: 1.6rem; }
 .today-focus { color: var(--text-mid); font-weight: 600; }
 .today-meta { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
 .today-meta span {
@@ -183,7 +183,7 @@ a.nav-btn { text-decoration: none; display: inline-block; }
   padding: 26px;
 }
 .act-head { display: flex; align-items: center; gap: 12px; }
-.act-head h3 { font-family: 'Fredoka One', cursive; font-weight: 400; font-size: 1.6rem; flex: 1; }
+.act-head h3 { font-family: var(--display); font-weight: 400; font-size: 1.6rem; flex: 1; }
 .act-icon { font-size: 2rem; }
 .say-btn, .inline-say {
   font-size: 1.3rem;
@@ -313,7 +313,7 @@ a.nav-btn { text-decoration: none; display: inline-block; }
 .rw:hover { background: rgba(75,123,236,.12); }
 .rw.reading { background: var(--honey); box-shadow: 0 0 0 4px var(--honey); }
 
-.story-title { font-family: 'Fredoka One', cursive; font-weight: 400; font-size: 1.5rem; text-align: center; margin-bottom: 12px; }
+.story-title { font-family: var(--display); font-weight: 400; font-size: 1.5rem; text-align: center; margin-bottom: 12px; }
 .story {
   font-size: var(--read-size);
   line-height: var(--read-line);
@@ -332,7 +332,7 @@ body.rb-ruler .story:not(:has(.current)) .story-line { opacity: 1; }
 .break-emoji { font-size: 5rem; animation: beeBob 2.5s ease-in-out infinite; }
 .break-text { font-family: var(--read-font); font-size: 1.5rem; font-weight: 700; margin: 12px 0; }
 .break-timer {
-  font-family: 'Fredoka One', cursive; font-size: 3rem; color: var(--amber);
+  font-family: var(--display); font-size: 3rem; color: var(--amber);
   margin-bottom: 16px;
 }
 
@@ -350,7 +350,7 @@ body.rb-ruler .story:not(:has(.current)) .story-line { opacity: 1; }
 }
 .settings-dialog::backdrop { background: rgba(0,0,0,.45); }
 .settings-dialog form { padding: 26px; display: grid; gap: 12px; font-family: 'Nunito', sans-serif; }
-.settings-dialog h2 { font-family: 'Fredoka One', cursive; font-weight: 400; }
+.settings-dialog h2 { font-family: var(--display); font-weight: 400; }
 .settings-note { color: var(--text-mid); font-size: .95rem; }
 .set-row { display: grid; gap: 6px; font-weight: 800; }
 .set-row select {
@@ -382,12 +382,12 @@ body.rb-ruler .story:not(:has(.current)) .story-line { opacity: 1; }
   box-shadow: var(--shadow-card); padding: 24px; margin-bottom: 22px;
 }
 .parent-card header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-.parent-card h3 { font-family: 'Fredoka One', cursive; font-weight: 400; font-size: 1.5rem; }
+.parent-card h3 { font-family: var(--display); font-weight: 400; font-size: 1.5rem; }
 .parent-card h4 { margin: 18px 0 8px; }
 .parent-card h4 small { font-weight: 600; color: var(--text-light); }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
 .kpis div { background: var(--honey-light); border-radius: var(--radius-md); padding: 12px; text-align: center; }
-.kpis b { display: block; font-size: 1.8rem; font-family: 'Fredoka One', cursive; font-weight: 400; }
+.kpis b { display: block; font-size: 1.8rem; font-family: var(--display); font-weight: 400; }
 .kpis span { font-size: .85rem; font-weight: 700; color: var(--text-mid); }
 .lvl-row { display: grid; grid-template-columns: 170px 1fr 48px; gap: 10px; align-items: center; margin: 6px 0; font-weight: 700; font-size: .92rem; }
 .lvl-bar { height: 12px; background: #EEE; border-radius: 50px; overflow: hidden; }
