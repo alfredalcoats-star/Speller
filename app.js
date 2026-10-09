@@ -125,6 +125,9 @@ const GAME_NEEDS = {
   context: { min: 3, ok: w => !!w.contextChoices && !!w.contextSentence, need: 'meanings and sentences' },
   missing: { min: 2, ok: w => !!w.sentence,        need: 'sentences' },
   spell:   { min: 1, ok: () => true,               need: 'words' },
+  // Comprehension games use reading texts for the chosen grade, not word lists
+  think:   { gradeOnly: true },
+  infer:   { gradeOnly: true },
 };
 
 function listEntries(list) {
@@ -176,18 +179,22 @@ function setGameAvailability(entries) {
   document.querySelector('.online-bar').style.display = entries ? 'none' : '';
   document.querySelectorAll('.game-sel-card').forEach(card => {
     const need = GAME_NEEDS[card.dataset.game];
-    const enough = !entries || entries.filter(need.ok).length >= need.min;
+    const enough = !entries || (!need.gradeOnly && entries.filter(need.ok).length >= need.min);
     card.classList.toggle('gsc-disabled', !enough);
     card.querySelector('.gsc-note')?.remove();
     if (!enough) {
-      card.insertAdjacentHTML('beforeend',
-        `<div class="gsc-note">Needs ${need.min}+ words with ${need.need} — add them in 📝 My Lists</div>`);
+      card.insertAdjacentHTML('beforeend', need.gradeOnly
+        ? '<div class="gsc-note">Pick a grade on the home page to play this game</div>'
+        : `<div class="gsc-note">Needs ${need.min}+ words with ${need.need} — add them in 📝 My Lists</div>`);
     }
   });
 }
 
 /* The words for one round of a game, from a grade or a grown-up's list */
 function wordsForGame(game) {
+  if (game === 'think' || game === 'infer') {
+    return Comprehension.pick(Comprehension.bandFor(state.currentGrade), 8, game === 'infer' ? 'infer' : null);
+  }
   if (state.currentList) {
     const list = WordLists.get(state.currentList);
     const entries = list ? listEntries(list) : [];
@@ -202,7 +209,10 @@ function wordsForGame(game) {
 document.querySelectorAll('.game-sel-card').forEach(card => {
   card.addEventListener('click', () => {
     if (!state.currentGrade && !state.currentList) { showToast('Pick a grade or a word list first! 📚'); showScreen('homeScreen'); return; }
-    if (card.classList.contains('gsc-disabled')) { showToast('This list needs more meanings or sentences for that game.'); return; }
+    if (card.classList.contains('gsc-disabled')) {
+      showToast(GAME_NEEDS[card.dataset.game].gradeOnly ? 'Pick a grade to play this game! 📚' : 'This list needs more meanings or sentences for that game.');
+      return;
+    }
     state.currentGame = card.dataset.game;
     state.words = wordsForGame(card.dataset.game);
     startGame(card.dataset.game);
@@ -225,7 +235,8 @@ function startGame(game) {
   state.round = 0;
   state.total = state.words.length;
 
-  const gameLabel = { match: '🔗 Word Match', context: '🔍 Context Clues', missing: '✏️ Missing Words', spell: '🎧 Spell It' };
+  const gameLabel = { match: '🔗 Word Match', context: '🔍 Context Clues', missing: '✏️ Missing Words', spell: '🎧 Spell It',
+    think: '🧠 Read & Think', infer: '🕵️ Inference Detective' };
   document.getElementById('gameTitle').textContent = gameLabel[game] || game;
 
   updateScoreDisplay();
@@ -243,6 +254,37 @@ function startGame(game) {
   if (game === 'context') buildContextRound();
   if (game === 'missing') buildMissingRound();
   if (game === 'spell')   buildSpellRound();
+  if (game === 'think' || game === 'infer') buildThinkRound();
+}
+
+/* ===================================================================
+   READ & THINK / INFERENCE DETECTIVE — short comprehension texts
+   (exercises and the player live in comprehension.js)
+   =================================================================== */
+function buildThinkRound() {
+  if (state.round >= state.words.length) { showResult(); return; }
+  setProgress(state.round / state.words.length);
+  const item = state.words[state.round];
+  const area = document.getElementById('gameArea');
+  area.innerHTML = `<div class="think-card">
+      <div class="round-label">${state.currentGame === 'infer' ? '🕵️ Case' : '🧠 Round'} ${state.round + 1} of ${state.words.length}</div>
+      <div id="thinkBody"></div>
+    </div>`;
+  const isLast = state.round === state.words.length - 1;
+  Comprehension.render(document.getElementById('thinkBody'), item, {
+    speak: speakText,
+    older: ['6', '7', '8'].includes(String(state.currentGrade)),
+    nextLabel: isLast ? '🏆 See Results' : 'Next →',
+    onDone: ok => {
+      if (ok) {
+        state.score++;
+        updateScoreDisplay();
+        showToast('✅ Great thinking!', 'correct');
+      }
+      state.round++;
+      buildThinkRound();
+    },
+  });
 }
 
 /* ===================================================================
@@ -685,7 +727,7 @@ function showResult() {
 
   if (pct === 1) {
     title   = '🏆 Perfect Score!';
-    message = `Amazing! You got all ${state.total} correct. You're a true Spelling Champion!`;
+    message = `Amazing! You got all ${state.total} correct. You're a true ${{ think: 'Reading Champion', infer: 'Reading Detective' }[state.currentGame] || 'Spelling Champion'}!`;
     stars   = '⭐⭐⭐';
     launchConfetti();
   } else if (pct >= 0.75) {

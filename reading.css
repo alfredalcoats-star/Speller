@@ -495,3 +495,10 @@ body.rb-band-teen .result-stars { display: none; }
 .list-word.hidden-word { color: transparent; }
 .list-meaning { text-align: center; font-weight: 700; color: var(--text-mid); font-family: var(--read-font); margin-bottom: 8px; }
 .list-go { margin-top: 10px; background: var(--white); }
+
+/* ===== THINK ABOUT IT ===== */
+#thinkArea .cq-text { font-size: calc(var(--read-size) * 0.75); letter-spacing: var(--read-letter); word-spacing: var(--read-word); }
+.talk-card { text-align: center; display: grid; gap: 12px; justify-items: center; padding: 10px; }
+.talk-icon { font-size: 3.4rem; }
+.talk-label { font-weight: 900; color: var(--purple); text-transform: uppercase; letter-spacing: .06em; font-size: .85rem; }
+.talk-prompt { font-family: var(--read-font); font-size: calc(var(--read-size) * 0.95); font-weight: 700; max-width: 560px; }

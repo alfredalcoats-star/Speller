@@ -113,6 +113,12 @@
     </section>
 
     <section class="sc-panel">
+      <h2 class="section-heading">🧩 Skill Drills</h2>
+      <p class="section-sub">Quick practice on one reading skill at a time: six short texts, each with a question. Inference drills ask you to prove your answer with a clue.</p>
+      <div id="drillChips" class="sc-drill-chips"></div>
+    </section>
+
+    <section class="sc-panel">
       <h2 class="section-heading">📚 Story Library</h2>
       <p class="section-sub">⭐ marks your grade. Tap a passage to practice it.</p>
       <div id="library" class="sc-library"></div>
@@ -149,6 +155,18 @@
   </div>
 </main>
 
+<!-- ===== SKILL DRILL ===== -->
+<main id="drillScreen" class="screen">
+  <div class="inner-wrap sc-wrap">
+    <div class="screen-topbar">
+      <button class="back-btn" id="quitDrill"><span class="back-arrow">←</span> Exit</button>
+      <h2 class="screen-title" id="drillTitle">Skill Drill</h2>
+      <div class="score-pill"><span class="score-star">⭐</span><span id="drillScore">0</span></div>
+    </div>
+    <div class="sc-panel sc-drill" id="drillBody"></div>
+  </div>
+</main>
+
 <!-- ===== RESULTS / GROWN-UPS ===== -->
 <main id="reportScreen" class="screen">
   <div class="inner-wrap sc-wrap" id="report"></div>
@@ -165,6 +183,7 @@
   </div>
 </footer>
 
+<script src="comprehension.js"></script>
 <script src="stories-data.js"></script>
 <script src="stories.js"></script>
 </body>

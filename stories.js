@@ -170,17 +170,114 @@ function renderStart() {
   sel.innerHTML = readers.map(r => `<option value="${esc(r.id)}">${r.avatar || '🙂'} ${esc(r.name)}</option>`).join('') +
     '<option value="guest">🙂 Guest reader</option>';
   if (previous && [...sel.options].some(o => o.value === previous)) sel.value = previous;
+  const prevGrade = $('#gradeSelect').value;
   $('#gradeSelect').innerHTML = STORY_GRADES.map(g => `<option value="${g}">${STORY_GRADE_LABEL(g)}</option>`).join('');
-  syncGrade();
+  // Keep the grade a grown-up picked; otherwise use the reader's grade
+  if (prevGrade && sel.value === previous) $('#gradeSelect').value = prevGrade;
+  else syncGrade();
   renderLibrary();
+  renderDrillChips();
   showScreen('startScreen');
 }
+
+/* ===================================================================
+   SKILL DRILLS — six short texts on one comprehension skill
+   (exercises and player shared with the other pages: comprehension.js)
+   =================================================================== */
+function renderDrillChips() {
+  const band = Comprehension.bandFor($('#gradeSelect').value);
+  const skills = Comprehension.skillsFor(band);
+  // Inference first: it's the skill kids need the most practice with
+  skills.sort((a, b) => (b === 'infer') - (a === 'infer'));
+  $('#drillChips').innerHTML = skills.map(k => `
+    <button class="sc-drill-chip ${k === 'infer' ? 'star' : ''}" data-skill="${k}">
+      <span>${COMP_SKILLS[k].icon}</span><b>${COMP_SKILLS[k].name}</b>${k === 'infer' ? '<small>Detective mode</small>' : ''}
+    </button>`).join('') +
+    `<button class="sc-drill-chip" data-skill="mixed"><span>🎲</span><b>Mixed Skills</b></button>
+    <p class="sc-drill-band">${COMP_BANDS[band]} texts</p>`;
+  $$('#drillChips .sc-drill-chip').forEach(b => b.addEventListener('click', () => startDrill(b.dataset.skill)));
+}
+
+function startDrill(skill) {
+  S.reader = currentReader();
+  S.mode = 'drill';
+  S.started = Date.now();
+  const band = Comprehension.bandFor(S.reader.grade);
+  const items = Comprehension.pick(band, 6, skill === 'mixed' ? null : skill);
+  const results = [];
+  const title = skill === 'mixed' ? '🎲 Mixed Skills' : `${COMP_SKILLS[skill].icon} ${COMP_SKILLS[skill].name}`;
+  $('#drillTitle').textContent = title;
+  $('#drillScore').textContent = '0';
+  showScreen('drillScreen');
+
+  const next = () => {
+    if (results.length >= items.length) { finishDrill(skill, items, results); return; }
+    const n = results.length;
+    $('#drillBody').innerHTML = `<div class="counter sc-drill-count">${n + 1} / ${items.length}</div><div id="drillItem"></div>`;
+    Comprehension.render($('#drillItem'), items[n], {
+      speak: text => { stopSpeech(); speak(text); },
+      older: band === '68',
+      nextLabel: n === items.length - 1 ? '🏁 See my score' : 'Next →',
+      onDone: ok => {
+        results.push(ok);
+        $('#drillScore').textContent = results.filter(Boolean).length;
+        next();
+      },
+    });
+    if (S.tools.autoRead || gradeIndex(S.reader.grade) <= 1) {
+      speak([items[n].text, items[n].q].filter(Boolean).join('. '));
+    }
+  };
+  next();
+}
+
+function finishDrill(skill, items, results) {
+  const right = results.filter(Boolean).length;
+  // Record drill results under the matching report skill area
+  const skills = {};
+  items.forEach((it, i) => {
+    const area = COMP_SKILLS[it.skill].storySkill;
+    skills[area] = skills[area] || { points: 0, max: 0 };
+    skills[area].points += results[i] ? 1 : 0;
+    skills[area].max += 1;
+  });
+  const r = S.reader;
+  store.history.unshift({
+    date: today(), readerId: r.id, readerName: r.name, avatar: r.avatar, grade: r.grade, mode: 'drill',
+    drill: skill === 'mixed' ? 'Mixed Skills' : COMP_SKILLS[skill].name,
+    passages: [], points: right, max: items.length, skills,
+    mins: Math.max(1, Math.round((Date.now() - S.started) / 60000)),
+  });
+  store.history = store.history.slice(0, 100);
+  saveStore();
+  const pct = right / items.length;
+  if (pct >= 0.8) launchConfetti();
+  const tip = skill === 'mixed' ? 'Mix it up every few days so every skill stays sharp.' : COMP_SKILLS[skill].tip;
+  $('#drillBody').innerHTML = `
+    <div class="sc-drill-done">
+      <div class="sc-big-icon">${skill === 'infer' ? '🕵️' : pct >= 0.8 ? '🌟' : '💪'}</div>
+      <h3 class="result-title">${right} of ${items.length} right on the first try!</h3>
+      <p class="result-msg">${pct >= 0.8 ? 'Excellent thinking!' : pct >= 0.5 ? 'Nice work — keep practicing!' : 'Good effort! Try another round to get stronger.'}</p>
+      <div class="sc-tipbox"><b>💡 Remember</b><p>${esc(tip)}</p></div>
+      <div class="row-btns sc-row">
+        <button class="btn-primary" id="drillAgain">🔄 Another round</button>
+        <button class="btn-secondary" id="drillHome">📚 Back to stories</button>
+      </div>
+    </div>`;
+  $('#drillAgain').addEventListener('click', () => startDrill(skill));
+  $('#drillHome').addEventListener('click', renderStart);
+  S.mode = null;
+}
+
+$('#quitDrill').addEventListener('click', () => {
+  if (confirm('Leave this drill? Your answers so far won\'t be saved.')) renderStart();
+});
 
 function syncGrade() {
   const id = $('#readerSelect').value;
   const r = readingBoostReaders().find(x => x.id === id);
   if (r && r.grade) $('#gradeSelect').value = String(r.grade);
-  else if (!$('#gradeSelect').value) $('#gradeSelect').value = '3';
+  else $('#gradeSelect').value = '3';
 }
 
 function currentReader() {
@@ -208,7 +305,7 @@ function renderLibrary() {
 }
 
 $('#readerSelect').addEventListener('change', () => { syncGrade(); renderLibrary(); });
-$('#gradeSelect').addEventListener('change', renderLibrary);
+$('#gradeSelect').addEventListener('change', () => { renderLibrary(); renderDrillChips(); });
 $('#startCheckup').addEventListener('click', () => {
   const grade = $('#gradeSelect').value;
   const pool = PASSAGES.filter(p => p.grade === grade);
@@ -804,6 +901,7 @@ function finishCheckup() {
       <div class="sc-tipbox">
         <b>🎯 Focus next: ${SKILLS[weakest].name}</b>
         <p>${SKILLS[weakest].tip}</p>
+        <button class="btn-primary sc-small" id="focusDrill">🧩 Practice ${COMP_SKILLS[Comprehension.drillFor(weakest, Comprehension.bandFor(S.reader.grade))].name} now</button>
       </div>
       <h3>Passages</h3>
       ${passages.map((p, n) => { const s = passageScore(p); return `<p>Part ${n + 1}: ${p.icon} <b>${esc(p.title)}</b> — ${STORY_GRADE_LABEL(p.grade)} ${p.genre.toLowerCase()} · ${s.points}/${s.max} points</p>`; }).join('')}
@@ -817,6 +915,8 @@ function finishCheckup() {
       </div>
     </section>`;
   $('#homeBtn').addEventListener('click', renderStart);
+  const focusSkill = Comprehension.drillFor(weakest, Comprehension.bandFor(S.reader.grade));
+  $('#focusDrill').addEventListener('click', () => startDrill(focusSkill));
   $('#printBtn').addEventListener('click', () => { $$('.sc-item-review').forEach(d => { d.open = true; }); window.print(); });
   $('#historyBtn').addEventListener('click', renderHistory);
   S.mode = null;
@@ -843,8 +943,8 @@ function renderHistory() {
       <table class="sc-table">
         <thead><tr><th>Date</th><th>Type</th><th>Passages</th><th>Score</th></tr></thead>
         <tbody>${list.slice(0, 15).map(e => `<tr>
-          <td>${e.date}</td><td>${e.mode === 'checkup' ? '🎯 Check-up' : '📖 Practice'}</td>
-          <td>${e.passages.map(x => `${esc(passageById(x.id)?.title || x.id)} (${STORY_GRADE_LABEL(x.grade)})`).join('<br>')}</td>
+          <td>${e.date}</td><td>${e.mode === 'checkup' ? '🎯 Check-up' : e.mode === 'drill' ? '🧩 Skill drill' : '📖 Practice'}</td>
+          <td>${e.mode === 'drill' ? esc(e.drill) : e.passages.map(x => `${esc(passageById(x.id)?.title || x.id)} (${STORY_GRADE_LABEL(x.grade)})`).join('<br>')}</td>
           <td>${e.points}/${e.max}</td></tr>`).join('')}</tbody>
       </table>
     </section>`;
@@ -861,6 +961,7 @@ function renderHistory() {
         <li><b>Check-Up</b> works like a short school reading check-up: two passages, with the second one moving up or down a grade depending on the first. Use it every few weeks to see growth.</li>
         <li><b>Question types</b> match what kids see at school: multiple choice, two-part (Part A / Part B) evidence questions, "choose two," click the sentence that proves it, put events in order, and short answers. Two-part and choose-two questions are worth 2 points, with partial credit.</li>
         <li><b>Tools</b> like read-aloud, the highlighter, line reader and answer eliminator (✂️) are similar to the tools on online school tests. Practicing with them at home makes test day feel familiar.</li>
+        <li><b>Skill Drills</b> practise one skill at a time with short texts. Inference drills add a "detective check": after answering, your child picks the clue that proves it.</li>
         <li><b>Skill areas:</b> ${Object.values(SKILLS).map(s => s.name).join(', ')}. The weakest area in a report comes with a tip you can use at home.</li>
         <li><b>Reading Boost readers</b> show up here automatically, so their grade and reading helpers carry over.</li>
       </ul>

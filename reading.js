@@ -475,11 +475,12 @@ const STEP_INFO = {
   break:     { icon: '🤸', name: 'Brain Break' },
   vocab:     { icon: '🧠', name: 'Grade Words' },
   list:      { icon: '📝', name: 'My Word List' },
+  think:     { icon: '🕵️', name: 'Think About It' },
 };
 /* Grown-up names for older readers so lessons never feel babyish */
 const STEP_NAMES_OLDER = {
   sounds: 'Sound Patterns', heart: 'Tricky Words', story: 'Passage Reading',
-  break: 'Reset Break', vocab: 'Vocabulary Builder', list: 'Word List Practice',
+  break: 'Reset Break', vocab: 'Vocabulary Builder', list: 'Word List Practice', think: 'Think Deeper',
 };
 
 function stepInfo(key) {
@@ -521,6 +522,8 @@ async function startLesson(levelId, opts = {}) {
   if (p.settings.breaks) steps.splice(quick ? 2 : 3, 0, 'break');
   // The grown-up's word list gets its own step, just before the story
   if (list) steps.splice(steps.indexOf('story'), 0, 'list');
+  // After every story: retell it, make inferences, and talk about it
+  steps.push('think');
   if (listOnly) steps = ['list'];
 
   $('#lessonTitle').textContent = listOnly ? `📝 ${list.name}` : `${level.icon} Level ${level.id}: ${level.title}`;
@@ -558,7 +561,7 @@ function runStep() {
   if (L.stepIndex >= L.steps.length) { finishLesson(); return; }
   const step = L.steps[L.stepIndex];
   ({ sounds: stepSounds, blend: stepBlend, spell: stepSpell, heart: stepHeart,
-     sentences: stepSentences, story: stepStory, break: stepBreak, vocab: stepVocab, list: stepList })[step]();
+     sentences: stepSentences, story: stepStory, break: stepBreak, vocab: stepVocab, list: stepList, think: stepThink })[step]();
   $('#activity').focus?.();
 }
 
@@ -1228,6 +1231,67 @@ function stepList() {
   show();
 }
 
+/* ---------- STEP: Think About It (comprehension after the story) ----------
+   1. Retell: put three parts of the story in order
+   2. Detective: inference exercises (find the answer, then the clue that proves it)
+   3. One more comprehension skill (full lessons)
+   4. Talk it over with a grown-up — oral comprehension, not scored */
+function stepThink() {
+  const L = lesson;
+  const p = activeProfile();
+  const band = Comprehension.bandFor(gradeOf(p));
+  const lines = L.story.text.match(/[^.!?]+[.!?"]+/g).map(s => s.trim());
+  const exercises = [];
+  if (lines.length >= 3) {
+    const picks = [0, Math.floor(lines.length / 2), lines.length - 1];
+    exercises.push({
+      skill: 'sequence',
+      text: `"${L.story.title}"`,
+      q: L.older ? 'Retell the passage: put these sentences in the order they appeared.' : 'Retell the story! Put these parts in order.',
+      items: picks.map(i => lines[i]),
+      why: L.older ? 'Retelling events in order is how strong readers check that they understood.' : 'That\'s the order they happened. Retelling helps you remember the story!',
+    });
+  }
+  exercises.push(...Comprehension.pick(band, L.quick ? 1 : 2, 'infer'));
+  const extra = Comprehension.pick(band, 8).find(x => x.skill !== 'infer' && x.skill !== 'sequence');
+  if (!L.quick && extra) exercises.push(extra);
+  let i = 0;
+
+  activityShell('think',
+    L.older ? 'Check your understanding: retell the passage, then make inferences and prove them with clues.'
+            : 'Let\'s think about what you read. Retell the story, then be a reading detective!',
+    '<div id="thinkArea"></div>');
+
+  function show() {
+    if (i >= exercises.length) { talk(); return; }
+    $('#thinkArea').innerHTML = `<div class="counter">${i + 1} / ${exercises.length}</div><div id="thinkItem"></div>`;
+    Comprehension.render($('#thinkItem'), exercises[i], {
+      speak: text => speak(text),
+      older: L.older,
+      onDone: ok => { score(ok); i++; show(); },
+    });
+  }
+
+  function talk() {
+    const prompts = L.older
+      ? ['Sum up the passage in two sentences.', 'Which clue in the text helped you understand a character or an idea?', 'What question would you ask the author?']
+      : ['What was your favorite part? Why?', 'How did the characters feel? How do you know?', 'What do you think happens next?'];
+    const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+    $('#thinkArea').innerHTML = `
+      <div class="talk-card">
+        <div class="talk-icon">💬</div>
+        <p class="talk-label">${L.older ? 'Discuss with a grown-up' : 'Talk with a grown-up'}</p>
+        <p class="talk-prompt">${esc(prompt)}</p>
+        <button class="btn-secondary" id="talkSay">🔊 Read it to me</button>
+        <button class="btn-primary" id="talkDone">✅ We talked about it</button>
+      </div>`;
+    instruct(prompt);
+    $('#talkSay').addEventListener('click', () => speak(prompt));
+    $('#talkDone').addEventListener('click', () => L.next());
+  }
+  show();
+}
+
 /* ---------- STEP: Brain Break ---------- */
 function stepBreak() {
   const L = lesson;
@@ -1451,6 +1515,7 @@ function renderParent() {
         <li><b>Placement:</b> Run the 2-minute placement check, or pick a starting level above. If accuracy stays below 60%, move back one level.</li>
         <li><b>Fresh words:</b> With "Add fresh words from the internet" on, each lesson mixes in a few new words from online dictionaries (or made by Claude when the page can't reach them). They're checked to use only sounds your child has learned. They have no pictures, so your child reads them aloud and checks by listening — a great moment to listen in.</li>
         <li><b>Your own word lists:</b> Add spelling or sight words in "📝 Word lists", then pick a list for each reader. Every lesson adds a short "My Word List" step (read it, check by listening, then spell it), and "Practice my word list" on the path runs just those words.</li>
+        <li><b>Think About It:</b> After every story, your child retells it in order, answers "detective" inference questions (then picks the clue that proves the answer), and talks about it with you. Those talk prompts build comprehension too, so take a minute to chat.</li>
         <li><b>Grade setting:</b> It doesn't lock your child into grade-level material. It sets the target level, lesson length, grade vocabulary, the reading-speed goal, and a more grown-up tone for Grades 3–8 — while lessons still meet them at their real skill level.</li>
       </ul>
       <h3>🧠 Helpers for different learners</h3>

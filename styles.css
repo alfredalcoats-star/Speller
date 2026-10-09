@@ -1469,3 +1469,59 @@ body {
 .story-banner { border-color: var(--teal); margin-top: 16px; }
 .story-banner .boost-text strong { color: var(--teal); }
 .story-banner .boost-go { background: var(--teal); }
+
+/* ===== COMPREHENSION EXERCISES (shared by all pages) ===== */
+.cq { display: grid; gap: 12px; }
+.cq-skill { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cq-skill span {
+  background: var(--purple-light); color: var(--purple); font-weight: 900;
+  border-radius: 50px; padding: 5px 14px; font-size: 0.9rem;
+}
+.cq-say {
+  background: var(--blue-light); border: 2px solid var(--blue); border-radius: 50px;
+  padding: 5px 14px; cursor: pointer; font-size: 1.1rem;
+}
+.cq-text {
+  font-family: var(--read-font, var(--passage-font, 'Nunito', sans-serif));
+  font-size: 1.2rem; line-height: 1.8; font-weight: 600;
+  background: var(--tint, var(--cream-2)); border-left: 5px solid var(--honey-mid);
+  border-radius: var(--radius-md); padding: 14px 18px; color: var(--text-dark);
+}
+.cq-clue-mark { background: #FFF07A; border-radius: 4px; padding: 0 2px; box-shadow: 0 0 0 2px #FFE14D; }
+.cq-q { font-weight: 800; font-size: 1.12rem; color: var(--text-dark); }
+.cq-hint { color: var(--text-mid); font-weight: 700; margin-bottom: 8px; }
+.cq-choices { display: grid; gap: 8px; }
+.cq-choices.two { grid-template-columns: 1fr 1fr; }
+.cq-choice, .cq-order-item {
+  display: flex; align-items: center; gap: 10px; text-align: left; width: 100%;
+  font-family: 'Nunito', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--text-dark);
+  background: var(--white); border: 2.5px solid var(--honey-mid); border-radius: var(--radius-md);
+  padding: 10px 14px; cursor: pointer; transition: border-color .15s;
+}
+.cq-choice:hover:not(:disabled), .cq-order-item:hover:not(:disabled) { border-color: var(--blue); }
+.cq-choice.right, .cq-order-item.right { background: var(--success-bg); border-color: var(--success); }
+.cq-choice.wrong { background: var(--error-bg); border-color: var(--error); opacity: .7; }
+.cq-choice:disabled { cursor: default; }
+.cq-letter, .cq-num {
+  flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--honey-light); font-weight: 900; font-size: .95rem;
+}
+.cq-order { display: grid; gap: 8px; margin-bottom: 10px; }
+.cq-num { background: transparent; border: 2px dashed var(--text-light); }
+.cq-order-item.picked { background: var(--blue-light); border-color: var(--blue); }
+.cq-order-item.picked .cq-num { background: var(--blue); color: var(--white); border: none; }
+.cq-check:disabled { opacity: .45; cursor: not-allowed; }
+.cq-clue { margin-top: 10px; padding-top: 12px; border-top: 2px dashed var(--honey-mid); display: grid; gap: 10px; }
+.cq-retry { color: var(--coral); font-weight: 800; }
+.cq-result { border-radius: var(--radius-md); padding: 12px 16px; line-height: 1.5; margin-bottom: 10px; }
+.cq-result.right { background: var(--success-bg); border: 2px solid var(--success); }
+.cq-result.wrong { background: var(--orange-light); border: 2px solid var(--orange); }
+.cq-result p { margin-top: 4px; }
+.cq-tip { color: var(--text-mid); font-size: .92rem; }
+@media (max-width: 560px) { .cq-choices.two { grid-template-columns: 1fr; } }
+
+/* Comprehension game frame in SpellingHive */
+.think-card {
+  background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-card);
+  padding: 26px; max-width: 760px; margin: 0 auto;
+}

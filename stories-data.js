@@ -17,6 +17,7 @@
      key    Key Ideas & Details
      craft  Craft & Structure
      integ  Integration of Knowledge & Ideas
+     infer  Making Inferences
      vocab  Vocabulary
    =================================================================== */
 
@@ -24,6 +25,7 @@ const SKILLS = {
   key:   { name: 'Key Ideas & Details',             tip: 'Ask "Who? What? Where? Why?" after each page, and have your child point to the words that prove the answer.' },
   craft: { name: 'Craft & Structure',               tip: 'Talk about why the author made choices: Why this title? Why tell it this way? How does this part fit the whole?' },
   integ: { name: 'Integration of Knowledge & Ideas', tip: 'Connect ideas: compare two parts of a text, use pictures or headings, and talk about the big message or main point.' },
+  infer: { name: 'Making Inferences',               tip: 'Ask "How do you know?" Have your child point to the clue words in the text, then add what they already know.' },
   vocab: { name: 'Vocabulary',                      tip: 'When you meet a new word, look for clue words nearby, guess the meaning together, then check it.' },
 };
 
@@ -50,6 +52,8 @@ const PASSAGES = [
         explain: 'Duck says, "I lost my red hat." That is why Duck is sad.' },
       { type: 'mc', skill: 'integ', prompt: 'What does Pip do that is kind?', choices: ['Pip keeps the hat.', 'Pip gives the hat back to Duck.', 'Pip hides the hat.'], answer: 1,
         explain: 'Pip gives the hat to Duck, its owner. That is kind.' },
+      { type: 'mc', skill: 'infer', prompt: "How does Pip MOST LIKELY feel when he gives Duck the hat?", choices: ["Happy to help", "Angry", "Scared"], answer: 0,
+        explain: "Pip chooses to give the hat back, and Duck smiles and thanks him. Pip is glad to help a friend." },
     ],
   },
   {
@@ -68,6 +72,8 @@ const PASSAGES = [
         explain: 'Bees make honey from nectar.' },
       { type: 'mc', skill: 'key', prompt: 'Where do bees live?', choices: ['In a nest', 'In a hive', 'In a pond'], answer: 1,
         explain: '"Bees live together in a hive."' },
+      { type: 'mc', skill: 'infer', prompt: "Why do you think bees visit so many flowers?", choices: ["To take a nap", "To get nectar to make honey", "To play tag"], answer: 1,
+        explain: "Bees drink nectar from flowers and make honey from it, so they need lots of flowers." },
     ],
   },
 
@@ -93,6 +99,8 @@ const PASSAGES = [
         explain: 'Eyes filling with tears shows that Maya is sad.' },
       { type: 'short', skill: 'vocab', prompt: 'Sam uses something long to climb up the tree. What is it? Type the word.', accept: ['ladder', 'a ladder'],
         explain: 'Sam came with a long ladder.' },
+      { type: 'mc', skill: 'infer', prompt: "Why does Grandpa say, \"Let's ask for help\"?", choices: ["He wants some lemonade", "He is tired of the park", "The kite is too high for them to reach"], answer: 2,
+        explain: "The kite is in a TALL tree, and Sam needs a LONG ladder. That shows it was too high to reach." },
     ],
   },
   {
@@ -113,6 +121,8 @@ const PASSAGES = [
         explain: '"Its tail gets shorter and shorter."' },
       { type: 'mc', skill: 'craft', prompt: 'What is this text MOSTLY about?', choices: ['How a frog grows', 'What frogs eat', 'Where fish live', 'How to catch a frog'], answer: 0,
         explain: 'Each part tells one step in how a frog grows.' },
+      { type: 'mc', skill: 'infer', prompt: "Why do you think the tadpole's tail gets shorter as its legs grow?", choices: ["A frog uses its legs to hop, so it no longer needs a long swimming tail", "A fish bites it off", "The tail falls off in the cold"], answer: 0,
+        explain: "Frogs hop on land with their legs. The long tail was for swimming as a tadpole." },
     ],
   },
 
@@ -139,6 +149,8 @@ const PASSAGES = [
         explain: 'Carrying heavy buckets all week made their arms hurt.' },
       { type: 'multi', skill: 'integ', prompt: 'Choose TWO lessons from this story.', choices: ['Good ideas can solve problems.', 'Gardens are boring.', 'Working together helps.', 'Never ask questions.'], answers: [0, 2],
         explain: 'Rosa\'s idea solved the problem, and the class worked together to build it.' },
+      { type: 'mc', skill: 'infer', prompt: "How does Mr. Lee MOST LIKELY feel about Rosa's idea?", choices: ["He thinks it is silly", "He thinks it is a good idea", "He is angry about it"], answer: 1,
+        explain: "He helps the class set up the barrel, so he must think it is a good idea." },
     ],
   },
   {
@@ -164,6 +176,8 @@ const PASSAGES = [
         explain: 'The text follows the seasons: summer, fall, winter, spring.' },
       { type: 'short', skill: 'key', prompt: 'What does the tree do all winter? Type one word.', accept: ['rest', 'rests', 'sleep', 'sleeps'],
         explain: '"The tree rests all winter."' },
+      { type: 'mc', skill: 'infer', prompt: "Why do you think the tree \"rests\" all winter?", choices: ["It is sick", "It is too hot outside", "Without leaves, it cannot make much food"], answer: 2,
+        explain: "Leaves make food using sunlight. With its leaves gone, the tree slows down until spring." },
     ],
   },
 
@@ -190,6 +204,8 @@ const PASSAGES = [
         explain: '"Without the streetlights, the sky was full of more stars..." The dark made the stars easier to see.' },
       { type: 'multi', skill: 'integ', prompt: 'Choose TWO ways the family has fun without electricity.', choices: ['Telling stories', 'Watching TV', 'Making shadow animals', 'Playing video games'], answers: [0, 2],
         explain: 'Mom tells a story and Dad makes shadow animals.' },
+      { type: 'mc', skill: 'infer', prompt: "Why does Dad smile when he says, \"I guess we'll have to make our own fun\"?", choices: ["He is looking forward to family time without screens", "He is upset about the storm", "He wants everyone to go to bed"], answer: 0,
+        explain: "His grin shows he is happy about spending time together, even without TV." },
     ],
   },
   {
@@ -203,7 +219,7 @@ const PASSAGES = [
     questions: [
       { type: 'mc', skill: 'integ', prompt: 'What is the MAIN idea of this passage?', choices: ['Sea urchins are spiny.', 'Sea otters help keep kelp forests healthy.', 'Kelp is a kind of seaweed.', 'California has a long coast.'], answer: 1,
         explain: 'Most of the passage explains how otters protect kelp forests by eating urchins.' },
-      { type: 'ebsr', skill: 'key',
+      { type: 'ebsr', skill: 'infer',
         partA: { prompt: 'Part A: What would MOST LIKELY happen if there were no sea otters?', choices: ['There would be more kelp.', 'Urchins could eat the kelp forest.', 'Fish would grow larger.', 'The water would get warmer.'], answer: 1 },
         partB: { prompt: 'Part B: Which sentence supports the answer to Part A?',
           choices: ['These kelp forests are home to fish, crabs, and many other sea animals.', 'If there are too many urchins, they can chew through a whole kelp forest and leave the sea floor bare.', 'Sea otters are also clever.', 'Sea otters are one of the few animals that use tools.'], answer: 1 },
@@ -214,6 +230,8 @@ const PASSAGES = [
         explain: 'The passage says so many other living things depend on them.' },
       { type: 'mc', skill: 'craft', prompt: 'Why does the author include paragraph 2?', choices: ['To explain the problem that otters help solve', 'To describe what otters look like', 'To tell where California is', 'To show that urchins are cute'], answer: 0,
         explain: 'Paragraph 2 explains the urchin problem, which sets up how otters help in paragraph 3.' },
+      { type: 'mc', skill: 'infer', prompt: "Why might a sea otter float on its back while it eats?", choices: ["It is asleep", "Its belly works like a table for its rock and food", "It is trying to stay cold"], answer: 1,
+        explain: "The otter places a rock on its belly to crack shells, so its belly works like a table." },
     ],
   },
 
@@ -243,6 +261,8 @@ const PASSAGES = [
         explain: 'The story moves from practice, to audition, to results, to Lena\'s choice.' },
       { type: 'short', skill: 'key', prompt: 'Who earns first chair? Type the name.', accept: ['maddie'],
         explain: 'Maddie, who played smoothly, was first chair.' },
+      { type: 'mc', skill: 'infer', prompt: "Why does Maddie ask Lena to help her with the fast part?", choices: ["Because Maddie cannot play at all", "To make Lena feel bad", "To show she respects Lena as a musician and wants to stay friends"], answer: 2,
+        explain: "Maddie won first chair, so she doesn't need to ask. Asking shows she values Lena's skill and friendship." },
     ],
   },
   {
@@ -269,6 +289,8 @@ const PASSAGES = [
         explain: 'Roman arch bridges are "still standing after two thousand years."' },
       { type: 'short', skill: 'key', prompt: 'Which type of bridge can stretch the farthest? Type one word.', accept: ['suspension', 'suspension bridge', 'suspension bridges'],
         explain: '"Suspension bridges can stretch the farthest."' },
+      { type: 'mc', skill: 'infer', prompt: "Why might engineers choose a beam bridge to cross a small creek?", choices: ["The distance is short, and beam bridges are cheap", "Beam bridges can stretch two miles", "Beam bridges need tall towers"], answer: 0,
+        explain: "Beam bridges are cheap but can't be long, which is fine for a small creek." },
     ],
   },
 
@@ -298,6 +320,8 @@ const PASSAGES = [
         explain: 'Both draw maps with care and skill.' },
       { type: 'vocab-mc', skill: 'vocab', prompt: 'In paragraph 4, "traced" most nearly means —', choices: ['followed along the lines', 'erased', 'tore', 'folded'], answer: 0,
         explain: 'She moved her finger along the lines of the map.' },
+      { type: 'mc', skill: 'infer', prompt: "Why does Nora pin Ada's map above her desk?", choices: ["To hide it from Eli", "It inspires her to keep making her own maps", "So she can sell it at the yard sale"], answer: 1,
+        explain: "Right after pinning it up, she starts mapping her neighborhood. Ada's story inspired her." },
     ],
   },
   {
@@ -324,6 +348,8 @@ const PASSAGES = [
         explain: 'The last sentence tells readers what they can do to help.' },
       { type: 'short', skill: 'vocab', prompt: 'What word in paragraph 2 means "a long trip from one place to another"? (Hint: it starts with j.)', accept: ['journey'],
         explain: 'A journey is a long trip: "long enough to make the whole journey south."' },
+      { type: 'mc', skill: 'infer', prompt: "What would MOST LIKELY happen to monarchs if milkweed disappeared completely?", choices: ["Monarchs would grow bigger", "Monarchs would fly faster", "Caterpillars would have nothing to eat, so fewer monarchs would survive"], answer: 2,
+        explain: "Milkweed is the ONLY food for monarch caterpillars, so without it they could not grow." },
     ],
   },
 
@@ -345,7 +371,7 @@ const PASSAGES = [
         partB: { prompt: 'Part B: Which detail BEST supports the answer to Part A?',
           choices: ['Her father kept the great lamp burning, and Clara rowed their small boat to the mainland for supplies.', 'Each wave tried to shove her back toward shore, but she kept her eyes fixed on the overturned hull.', 'When her father returned that night, he found them wrapped in blankets beside the stove, drinking tea.', '"Who brought you in?" he asked.'], answer: 1 },
         explain: 'Clara keeps going even as each wave pushes her back.' },
-      { type: 'mc', skill: 'craft', prompt: 'What does the ending suggest about Clara?', choices: ['She wants everyone to praise her.', 'She is humble and sees the rescue as part of her duty.', 'She is too tired to speak.', 'She is upset with the fishermen.'], answer: 1,
+      { type: 'mc', skill: 'infer', prompt: 'What does the ending suggest about Clara?', choices: ['She wants everyone to praise her.', 'She is humble and sees the rescue as part of her duty.', 'She is too tired to speak.', 'She is upset with the fishermen.'], answer: 1,
         explain: 'She quietly goes back to her usual chores instead of bragging.' },
       { type: 'hottext', skill: 'key', prompt: 'Click the sentence that shows the physical cost of Clara\'s rescue.', answer: [2, 1],
         explain: 'She rowed "until her palms blistered."' },
@@ -354,6 +380,8 @@ const PASSAGES = [
         explain: 'Storm, capsized boat, rescue, then her father returns.' },
       { type: 'multi', skill: 'craft', prompt: 'Choose TWO details the author uses to show the setting is dangerous.', choices: ['The wind turned savage.', 'She drank tea by the stove.', 'The water was churning.', 'She trimmed the wick.'], answers: [0, 2],
         explain: 'The savage wind and churning water show danger.' },
+      { type: 'mc', skill: 'infer', prompt: "What can you infer about Clara's life at the lighthouse?", choices: ["She is used to doing hard, important work", "She has never worked before", "She wants to leave the lighthouse"], answer: 0,
+        explain: "She rows for supplies and trims the lamp every evening. She is used to responsibility." },
     ],
   },
   {
@@ -380,6 +408,8 @@ const PASSAGES = [
         explain: 'Paragraph 3 lists trouble paying attention, controlling emotions, and remembering.' },
       { type: 'short', skill: 'key', prompt: 'How many hours before bed do experts suggest turning off screens? Type a number or word.', accept: ['1', 'one', 'an hour', 'one hour', '1 hour'],
         explain: 'Experts suggest turning off screens "an hour before bed."' },
+      { type: 'mc', skill: 'infer', prompt: "A student uses a phone in bed until midnight. What will MOST LIKELY happen the next day?", choices: ["They will remember more", "They may have trouble paying attention", "They will feel extra rested"], answer: 1,
+        explain: "Screen light delays melatonin, so they sleep less, and less sleep makes it hard to pay attention." },
     ],
   },
 
@@ -409,6 +439,8 @@ const PASSAGES = [
         explain: 'Marcus credits the original programmer and proudly explains the new feature.' },
       { type: 'vocab-mc', skill: 'vocab', prompt: 'In paragraph 2, Marcus "shrugged." This action suggests he —', choices: ['did not think the problem was important', 'was confused about the code', 'was angry with Priya', 'was very tired'], answer: 0,
         explain: 'A shrug, along with "Everybody borrows code," shows he doesn\'t see it as a problem.' },
+      { type: 'mc', skill: 'infer', prompt: "Why does Marcus stand \"a little taller\" when he explains the feature?", choices: ["He grew taller during the fair", "He is trying to see over the crowd", "He is proud of work he truly understands"], answer: 2,
+        explain: "He can explain every line of the new feature they built themselves, so he feels proud." },
     ],
   },
   {
@@ -435,6 +467,8 @@ const PASSAGES = [
         explain: 'Paragraph 3 reports higher attendance and fewer students sleeping in class.' },
       { type: 'short', skill: 'vocab', prompt: 'Which word in paragraph 4 means "people who disagree with or find fault with an idea"?', accept: ['critics'],
         explain: '"Critics argue..." Critics are people who find fault with an idea.' },
+      { type: 'mc', skill: 'infer', prompt: "Based on the passage, why might some districts NOT change their start times?", choices: ["Buses and sports schedules are hard to rearrange", "Teens need less sleep than adults", "Students asked for earlier starts"], answer: 0,
+        explain: "The counterclaim mentions buses and sports, which suggests these are reasons districts hesitate." },
     ],
   },
 
@@ -464,6 +498,8 @@ const PASSAGES = [
         explain: 'Ash-covered hands and an aching back show the effort.' },
       { type: 'vocab-mc', skill: 'vocab', prompt: 'In paragraph 2, "spared" means —', choices: ['burned', 'not harmed', 'planted', 'cut down'], answer: 1,
         explain: 'The oaks along the creek survived; the fire did not harm them.' },
+      { type: 'mc', skill: 'infer', prompt: "How has Teo MOST LIKELY changed by the end of the story?", choices: ["He still thinks planting is pointless", "He is starting to feel hopeful", "He wants to move away"], answer: 1,
+        explain: "He notices new green shoots he had missed. He is starting to see that the land can recover." },
     ],
   },
   {
@@ -491,6 +527,8 @@ const PASSAGES = [
         explain: 'Cheaper books meant more readers and faster-spreading ideas.' },
       { type: 'vocab-mc', skill: 'vocab', prompt: 'In paragraph 4, "authority" most nearly means —', choices: ['power to make decisions and rules', 'a type of book', 'a famous author', 'a printing tool'], answer: 0,
         explain: 'Leaders feared pamphlets would challenge their power.' },
+      { type: 'mc', skill: 'infer', prompt: "Why might some leaders have feared printed pamphlets?", choices: ["They were too expensive to buy", "Nobody could read them", "They could spread criticism of leaders to many people quickly"], answer: 2,
+        explain: "Pamphlets spread ideas fast. Leaders worried they would challenge their authority." },
     ],
   },
 ];

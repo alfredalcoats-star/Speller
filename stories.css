@@ -272,3 +272,20 @@ body.sc-line .sc-para { cursor: pointer; }
   body { background: #fff; }
   .sc-panel { box-shadow: none; }
 }
+
+/* ===== Skill drills ===== */
+.sc-drill-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 14px; }
+.sc-drill-chip {
+  font-family: 'Nunito', sans-serif; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: var(--cream); border: 2.5px solid var(--honey-mid); border-radius: var(--radius-lg);
+  padding: 14px 10px; cursor: pointer; color: var(--text-dark); text-align: center;
+}
+.sc-drill-chip span { font-size: 1.8rem; }
+.sc-drill-chip small { color: var(--purple); font-weight: 800; }
+.sc-drill-chip:hover { border-color: var(--purple); }
+.sc-drill-chip.star { border-color: var(--purple); background: var(--purple-light); }
+.sc-drill-band { grid-column: 1 / -1; color: var(--text-light); font-weight: 700; font-size: .9rem; }
+.sc-drill { max-width: 780px; margin: 0 auto; }
+.sc-drill-count { text-align: center; font-weight: 800; color: var(--text-light); margin-bottom: 10px; }
+.sc-drill-done { text-align: center; }
+.sc-drill .cq-text { font-family: var(--passage-font); font-size: calc(var(--passage-size) * 1.05); }
