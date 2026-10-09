@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Story Check — SpellingHive</title>
+  <meta name="description" content="Read stories and informational passages for grades K-8 and answer test-style questions, with a skill-by-skill report for grown-ups." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&family=Lexend:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="stories.css" />
+</head>
+<body>
+
+<div class="hc-bg" aria-hidden="true"></div>
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo-area" href="index.html">
+      <div class="bee-wrap">
+        <svg class="bee" viewBox="0 0 160 190" xmlns="http://www.w3.org/2000/svg" aria-label="Happy bee mascot">
+          <!-- Wings (behind body) -->
+          <ellipse cx="42" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-left"/>
+          <ellipse cx="118" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-right"/>
+          <!-- Body -->
+          <ellipse cx="80" cy="128" rx="38" ry="32" fill="#FFD700"/>
+          <!-- Stripes -->
+          <path d="M44 118 Q80 111 116 118" stroke="#1a1a1a" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M43 132 Q80 125 117 132" stroke="#1a1a1a" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <!-- Body border -->
+          <ellipse cx="80" cy="128" rx="38" ry="32" fill="none" stroke="#c8950a" stroke-width="2.5"/>
+          <!-- Stinger -->
+          <polygon points="80,159 71,176 89,176" fill="#e6a800" stroke="#b8840a" stroke-width="1.5"/>
+          <!-- Neck connector -->
+          <ellipse cx="80" cy="94" rx="15" ry="11" fill="#FFD700" stroke="#c8950a" stroke-width="2"/>
+          <!-- Head -->
+          <circle cx="80" cy="68" r="30" fill="#FFD700" stroke="#c8950a" stroke-width="2.5"/>
+          <!-- Forehead shine -->
+          <ellipse cx="72" cy="52" rx="10" ry="6" fill="rgba(255,255,255,0.3)" transform="rotate(-15,72,52)"/>
+          <!-- Eyes -->
+          <circle cx="65" cy="62" r="11" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="95" cy="62" r="11" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="67" cy="63" r="6.5" fill="#1a1a1a"/>
+          <circle cx="97" cy="63" r="6.5" fill="#1a1a1a"/>
+          <!-- Eye shine -->
+          <circle cx="70" cy="60" r="2.5" fill="white"/>
+          <circle cx="100" cy="60" r="2.5" fill="white"/>
+          <!-- Happy smile -->
+          <path d="M60 80 Q80 98 100 80" stroke="#1a1a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <!-- Rosy cheeks -->
+          <circle cx="52" cy="74" r="9" fill="#FF9EAB" opacity="0.45"/>
+          <circle cx="108" cy="74" r="9" fill="#FF9EAB" opacity="0.45"/>
+          <!-- Antennae -->
+          <path d="M68 40 Q58 22 46 12" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="44" cy="10" r="7" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M92 40 Q102 22 114 12" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="116" cy="10" r="7" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
+          <!-- Tiny heart on antenna -->
+          <text x="38" y="10" font-size="8" text-anchor="middle">♥</text>
+          <text x="114" y="10" font-size="8" text-anchor="middle">♥</text>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-title">Story<span>Check</span></div>
+        <div class="logo-tag">Read it. Think it. Prove it! 📚</div>
+      </div>
+    </a>
+
+    <nav class="top-nav" aria-label="Main navigation">
+      <a class="nav-btn" href="index.html">🏠 SpellingHive</a>
+      <a class="nav-btn" href="reading.html">📖 Reading Boost</a>
+      <button class="nav-btn" id="navStart">📚 Stories</button>
+      <button class="nav-btn" id="navResults">📊 Grown-Ups</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ===== START ===== -->
+<main id="startScreen" class="screen">
+  <div class="inner-wrap sc-wrap">
+    <section class="sc-hero">
+      <div class="hero-badge">✨ Grades K–8 · Stories &amp; nonfiction · Test-style questions ✨</div>
+      <h1 class="hero-title">Story Check</h1>
+      <p class="hero-sub">Read a passage, then answer questions the way they appear on school reading check-ups like BEACON: multiple choice, two-part Part A / Part B questions, "choose two," click the sentence that proves it, put events in order, and short answers.</p>
+    </section>
+
+    <section class="sc-panel">
+      <h2 class="section-heading">👋 Who is reading?</h2>
+      <div class="sc-reader-row">
+        <label>Reader
+          <select id="readerSelect"></select>
+        </label>
+        <label>Grade
+          <select id="gradeSelect"></select>
+        </label>
+      </div>
+    </section>
+
+    <section class="sc-modes">
+      <button class="sc-mode" id="startCheckup">
+        <span class="sc-mode-icon">🎯</span>
+        <b>Reading Check-Up</b>
+        <span>Two passages, about 20 minutes. The second passage gets harder or easier depending on how the first one went. Results at the end, by skill.</span>
+        <span class="sc-mode-go">Start check-up →</span>
+      </button>
+      <button class="sc-mode practice" id="startPractice">
+        <span class="sc-mode-icon">📖</span>
+        <b>Practice a Story</b>
+        <span>Pick any passage below. Check each answer as you go and see why it's right.</span>
+        <span class="sc-mode-go">Choose below ↓</span>
+      </button>
+    </section>
+
+    <section class="sc-panel">
+      <h2 class="section-heading">📚 Story Library</h2>
+      <p class="section-sub">⭐ marks your grade. Tap a passage to practice it.</p>
+      <div id="library" class="sc-library"></div>
+    </section>
+  </div>
+</main>
+
+<!-- ===== TEST ===== -->
+<main id="testScreen" class="screen">
+  <div class="inner-wrap sc-wrap">
+    <div class="screen-topbar">
+      <button class="back-btn" id="quitTest"><span class="back-arrow">←</span> Exit</button>
+      <h2 class="screen-title" id="testTitle">Passage</h2>
+      <div class="score-pill" id="partPill">Part 1 of 2</div>
+    </div>
+
+    <div class="sc-tools" role="toolbar" aria-label="Reading tools">
+      <button class="sc-tool" id="toolRead" aria-pressed="false">🔊 Read passage</button>
+      <button class="sc-tool" id="toolHighlight" aria-pressed="false">🖍️ Highlighter</button>
+      <button class="sc-tool" id="toolLine" aria-pressed="false">📏 Line reader</button>
+      <button class="sc-tool" id="toolFont" aria-pressed="false">Aa Easy-read font</button>
+      <button class="sc-tool" id="toolSize">A+ Text size</button>
+      <label class="sc-tool sc-tool-check"><input type="checkbox" id="toolAutoRead" /> Read questions to me</label>
+    </div>
+
+    <div class="sc-split">
+      <article class="sc-passage" id="passage" aria-label="Passage"></article>
+      <section class="sc-question-pane">
+        <nav class="sc-qnav" id="qnav" aria-label="Questions"></nav>
+        <div id="question" class="sc-question" aria-live="polite"></div>
+        <div class="sc-qbuttons" id="qbuttons"></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<!-- ===== RESULTS / GROWN-UPS ===== -->
+<main id="reportScreen" class="screen">
+  <div class="inner-wrap sc-wrap" id="report"></div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="confettiContainer" class="confetti-container" aria-hidden="true"></div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-bee">🐝</div>
+    <div class="footer-text"><strong>Story Check</strong> — practice in the style of school reading check-ups. Not an official test; results are saved on this device only.</div>
+    <div class="footer-links"><span>18 Passages</span><span>•</span><span>Grades K–8</span></div>
+  </div>
+</footer>
+
+<script src="stories-data.js"></script>
+<script src="stories.js"></script>
+</body>
+</html>
