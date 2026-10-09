@@ -82,7 +82,7 @@
 <main id="profileScreen" class="screen rb-screen">
   <div class="inner-wrap">
     <section class="rb-hero">
-      <div class="hero-badge">✨ Built for dyslexia, ADHD, autism &amp; every kind of learner ✨</div>
+      <div class="hero-badge">✨ Grades K–8 · Built for dyslexia, ADHD, autism &amp; every kind of learner ✨</div>
       <h1 class="hero-title">Reading Boost</h1>
       <p class="hero-sub">Short, step-by-step phonics lessons that use seeing, hearing, saying and touching — the way research shows struggling readers learn best.</p>
     </section>
@@ -94,6 +94,18 @@
       <h3>Add a reader</h3>
       <label for="newName">First name</label>
       <input id="newName" maxlength="20" required placeholder="e.g. Maya" />
+      <label for="newGrade">Grade in school</label>
+      <select id="newGrade" required>
+        <option value="K">Kindergarten</option>
+        <option value="1" selected>Grade 1</option>
+        <option value="2">Grade 2</option>
+        <option value="3">Grade 3</option>
+        <option value="4">Grade 4</option>
+        <option value="5">Grade 5</option>
+        <option value="6">Grade 6</option>
+        <option value="7">Grade 7</option>
+        <option value="8">Grade 8</option>
+      </select>
       <fieldset>
         <legend>Pick a buddy</legend>
         <div id="avatarPick" class="avatar-pick"></div>
@@ -111,6 +123,11 @@
       <div class="pillar"><span>✋</span><b>Build it</b><p>Tap letter tiles to spell words. No dragging, no time limits.</p></div>
     </section>
   </div>
+</main>
+
+<!-- ===== STARTING POINT / PLACEMENT ===== -->
+<main id="placeScreen" class="screen rb-screen">
+  <div class="inner-wrap" id="placeBody"></div>
 </main>
 
 <!-- ===== LEVEL MAP ===== -->
@@ -219,10 +236,11 @@
   <div class="footer-inner">
     <div class="footer-bee">🐝</div>
     <div class="footer-text"><strong>Reading Boost</strong> — part of SpellingHive. Progress is saved on this device only.</div>
-    <div class="footer-links"><span>10 Levels</span><span>•</span><span>Structured Literacy</span></div>
+    <div class="footer-links"><span>14 Levels · Grades K–8</span><span>•</span><span>Structured Literacy</span></div>
   </div>
 </footer>
 
+<script src="words-data.js"></script>
 <script src="reading-data.js"></script>
 <script src="reading.js"></script>
 </body>

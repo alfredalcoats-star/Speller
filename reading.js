@@ -8,6 +8,7 @@
 const STORE_KEY = 'readingBoost.v1';
 const MASTERY = 0.8;          // 80% first-try accuracy unlocks the next level
 const REVIEW_GRADUATE = 3;    // correct reviews needed to clear a missed word
+const MAX_REAL_WPM = 250;     // timed reads faster than this are not saved
 const AVATARS = ['🐝', '🦊', '🐼', '🦄', '🐸', '🦁', '🐙', '🐢', '🦋', '🐶', '🐱', '🚀'];
 
 const DEFAULT_SETTINGS = {
@@ -19,7 +20,16 @@ const DEFAULT_SETTINGS = {
 function loadStore() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const data = JSON.parse(raw);
+      // Fill in fields added after a profile was first saved
+      for (const p of Object.values(data.profiles)) {
+        p.grade ??= '1';
+        p.vocab ??= {};
+        p.fluency ??= [];
+      }
+      return data;
+    }
   } catch (e) { /* storage blocked — run without saving */ }
   return { profiles: {}, activeId: null };
 }
@@ -31,14 +41,26 @@ const store = loadStore();
 
 function activeProfile() { return store.profiles[store.activeId] || null; }
 
-function newProfile(name, avatar) {
+/* ===== GRADE HELPERS ===== */
+function gradeOf(p = activeProfile()) { return GRADES[p?.grade] ? String(p.grade) : '1'; }
+function gradeCfg(p = activeProfile()) { return GRADES[gradeOf(p)]; }
+function isOlder(p = activeProfile()) { return gradeCfg(p).band !== 'young'; }
+const praise = () => pick(isOlder() ? PRAISE_OLDER : PRAISE);
+const retry = () => pick(isOlder() ? GENTLE_RETRY_OLDER : GENTLE_RETRY);
+
+function newProfile(name, avatar, grade) {
   const id = 'p' + Date.now().toString(36);
+  const older = GRADES[grade].band !== 'young';
   store.profiles[id] = {
-    id, name, avatar,
-    settings: { ...DEFAULT_SETTINGS },
+    id, name, avatar, grade,
+    // Older readers start without read-aloud instructions and with a calmer look
+    settings: { ...DEFAULT_SETTINGS, autoRead: !older, tint: older ? 'none' : DEFAULT_SETTINGS.tint },
     levels: {},          // levelId -> { best, attempts, mastered }
     unlocked: 1,         // highest unlocked level
     review: {},          // word -> { level, box }
+    vocab: {},           // grade word -> box (times answered right in a row)
+    fluency: [],         // timed passage reads: { date, level, wpm }
+    placed: null,        // placement check result
     stars: 0,
     minutes: 0,
     days: [],            // ISO dates practiced
@@ -136,7 +158,8 @@ function applySettings() {
   const s = activeProfile()?.settings || DEFAULT_SETTINGS;
   const b = document.body;
   b.classList.remove(...[...b.classList].filter(c => c.startsWith('rb-')));
-  b.classList.add(`rb-font-${s.font}`, `rb-size-${s.size}`, `rb-space-${s.spacing}`, `rb-tint-${s.tint}`);
+  b.classList.add(`rb-font-${s.font}`, `rb-size-${s.size}`, `rb-space-${s.spacing}`, `rb-tint-${s.tint}`,
+    `rb-band-${gradeCfg().band}`);
   if (s.calm) b.classList.add('rb-calm');
   if (s.ruler) b.classList.add('rb-ruler');
 }
@@ -206,6 +229,7 @@ function renderProfiles() {
     <button class="profile-card" data-id="${p.id}">
       <span class="pf-avatar">${p.avatar}</span>
       <span class="pf-name">${esc(p.name)}</span>
+      <span class="pf-level">${GRADES[gradeOf(p)].label}</span>
       <span class="pf-level">Level ${p.unlocked} · ⭐ ${p.stars}</span>
     </button>
   `).join('') + `
@@ -242,15 +266,106 @@ function renderProfiles() {
     e.preventDefault();
     const name = $('#newName').value.trim();
     if (!name) return;
-    newProfile(name, chosen);
+    const p = newProfile(name, chosen, $('#newGrade').value);
     $('#newProfileForm').reset();
     $('#newProfileForm').classList.add('hidden');
     applySettings();
-    renderMap();
-    speak(`Hi ${name}! Let's start reading.`);
+    renderStartChoice(p);
+    speak(`Hi ${name}! Let's find the best place to start.`);
   });
   $('#cancelNewProfile').addEventListener('click', () => $('#newProfileForm').classList.add('hidden'));
 })();
+
+/* ===================================================================
+   STARTING POINT & PLACEMENT CHECK
+   Kids who struggle often have gaps in earlier skills, so instead of
+   assuming grade level we offer a quick check that finds the first
+   level where reading breaks down.
+   =================================================================== */
+function renderStartChoice(p) {
+  const cfg = gradeCfg(p);
+  const target = READING_LEVELS[cfg.start - 1];
+  $('#placeBody').innerHTML = `
+    <div class="act-card place-card">
+      <div class="done-avatar">${p.avatar}</div>
+      <h3 class="result-title">Where should ${esc(p.name)} start?</h3>
+      <p class="result-msg">${cfg.label} readers usually work around <b>Level ${target.id}: ${target.title}</b>.
+        Kids who find reading hard often have small gaps in earlier skills — the check finds them.</p>
+      <div class="start-options">
+        <button class="start-opt recommended" id="optCheck">
+          <span>🧭</span><b>Find my level</b><small>About 2 minutes · recommended</small>
+        </button>
+        <button class="start-opt" id="optGrade">
+          <span>🎯</span><b>Start at Level ${target.id}</b><small>Typical for ${cfg.label}</small>
+        </button>
+        <button class="start-opt" id="optBegin">
+          <span>🌱</span><b>Start at Level 1</b><small>Build from the very beginning</small>
+        </button>
+      </div>
+    </div>`;
+  $('#optCheck').addEventListener('click', () => startPlacement(p));
+  $('#optGrade').addEventListener('click', () => setStart(p, target.id, 'grade'));
+  $('#optBegin').addEventListener('click', () => setStart(p, 1, 'beginning'));
+  showScreen('placeScreen');
+}
+
+function setStart(p, levelId, how) {
+  p.unlocked = Math.max(1, Math.min(levelId, READING_LEVELS.length));
+  p.placed = { date: today(), level: p.unlocked, how };
+  saveStore();
+  renderMap();
+}
+
+function startPlacement(p) {
+  // Two words per level, easiest first. Stop at the first level that isn't solid.
+  const plan = READING_LEVELS.map(l => ({ level: l, words: shuffle(l.words.map(w => w[0])).slice(0, 2) }));
+  let li = 0, wi = 0, right = 0;
+
+  function show() {
+    const { level, words } = plan[li];
+    $('#placeBody').innerHTML = `
+      <div class="act-card place-card">
+        <div class="act-head"><span class="act-icon">🧭</span><h3>Find My Level</h3></div>
+        <p class="act-instr"><b>Reader:</b> read the word out loud. <b>Grown-up:</b> tap ✅ only if it was read correctly, without help, in about 3 seconds.</p>
+        <div class="counter">Checking Level ${level.id} of ${READING_LEVELS.length} · ${level.title}</div>
+        <div class="place-word tinted">${esc(words[wi])}</div>
+        <div class="row-btns">
+          <button class="btn-primary" id="plYes">✅ Read it correctly</button>
+          <button class="btn-secondary" id="plNo">❌ Not yet</button>
+        </div>
+        <div class="row-btns"><button class="btn-outline" id="plStop">Stop and start at Level ${level.id}</button></div>
+      </div>`;
+    $('#plYes').addEventListener('click', () => answer(true));
+    $('#plNo').addEventListener('click', () => answer(false));
+    $('#plStop').addEventListener('click', () => done(level.id));
+  }
+  function answer(ok) {
+    if (ok) right++;
+    wi++;
+    if (wi < plan[li].words.length) { show(); return; }
+    if (right < plan[li].words.length) { done(plan[li].level.id); return; }
+    li++; wi = 0; right = 0;
+    if (li >= plan.length) { done(READING_LEVELS.length); return; }
+    show();
+  }
+  function done(levelId) {
+    const l = READING_LEVELS[levelId - 1];
+    p.unlocked = levelId;
+    p.placed = { date: today(), level: levelId, how: 'check' };
+    saveStore();
+    $('#placeBody').innerHTML = `
+      <div class="act-card place-card">
+        <div class="done-avatar">${l.icon}</div>
+        <h3 class="result-title">Start at Level ${l.id}: ${l.title}</h3>
+        <p class="result-msg">${esc(l.focus)}. This is where practice will help ${esc(p.name)} the most.</p>
+        <div class="row-btns"><button class="btn-primary" id="plGo">🗺️ Go to my path</button></div>
+      </div>`;
+    speak(`Great job! Let's start at level ${l.id}, ${l.title}.`);
+    $('#plGo').addEventListener('click', renderMap);
+  }
+  showScreen('placeScreen');
+  show();
+}
 
 /* ===================================================================
    LEVEL MAP
@@ -258,6 +373,7 @@ function renderProfiles() {
 function renderMap() {
   const p = activeProfile();
   if (!p) { renderProfiles(); return; }
+  const cfg = gradeCfg(p);
   $('#mapTitle').textContent = `${p.avatar} ${p.name}'s Reading Path`;
   $('#mapStars').textContent = p.stars;
 
@@ -274,26 +390,31 @@ function renderMap() {
       </div>
     </div>
     <div class="today-meta">
+      <span>🎒 ${cfg.label}</span>
       <span>🔥 ${streak} day streak</span>
       <span>🔁 ${reviewCount} review word${reviewCount === 1 ? '' : 's'}</span>
       <span>⏱ ${p.settings.quick ? '~5' : '~12'} min</span>
     </div>
     <button class="btn-primary big-go" id="startToday">▶ Start lesson</button>
+    ${!p.placed && !p.log.length ? '<button class="link-btn" id="takeCheck">🧭 Not sure this is the right level? Take the 2-minute check</button>' : ''}
   `;
   $('#startToday').addEventListener('click', () => startLesson(next.id));
+  $('#takeCheck')?.addEventListener('click', () => renderStartChoice(p));
 
   $('#levelPath').innerHTML = READING_LEVELS.map(l => {
     const rec = p.levels[l.id];
     const locked = l.id > p.unlocked;
     const status = rec?.mastered ? 'mastered' : locked ? 'locked' : 'open';
     const badge = rec?.mastered ? '🏅 Mastered' : locked ? '🔒 Locked' : rec ? `Best ${Math.round(rec.best * 100)}%` : 'New!';
+    const goal = l.id === cfg.start ? `<span class="goal-tag">🎯 ${cfg.label} goal</span>` : '';
     return `
       <li>
         <button class="level-node ${status}" data-level="${l.id}" ${locked ? 'disabled' : ''}
           aria-label="Level ${l.id} ${l.title}, ${badge}">
           <span class="ln-icon">${locked ? '🔒' : l.icon}</span>
           <span class="ln-body">
-            <span class="ln-title">Level ${l.id} · ${l.title}</span>
+            <span class="ln-title">Level ${l.id} · ${l.title} ${goal}</span>
+            <span class="ln-grade">Usually grade ${l.grades}</span>
             <span class="ln-focus">${esc(l.focus)}</span>
           </span>
           <span class="ln-badge">${badge}</span>
@@ -331,20 +452,41 @@ const STEP_INFO = {
   sentences: { icon: '📝', name: 'Read Sentences' },
   story:     { icon: '📖', name: 'Story Time' },
   break:     { icon: '🤸', name: 'Brain Break' },
+  vocab:     { icon: '🧠', name: 'Grade Words' },
 };
+/* Grown-up names for older readers so lessons never feel babyish */
+const STEP_NAMES_OLDER = {
+  sounds: 'Sound Patterns', heart: 'Tricky Words', story: 'Passage Reading',
+  break: 'Reset Break', vocab: 'Vocabulary Builder',
+};
+
+function stepInfo(key) {
+  const info = { ...STEP_INFO[key] };
+  if (isOlder() && STEP_NAMES_OLDER[key]) info.name = STEP_NAMES_OLDER[key];
+  if (lesson?.level.chunks) {
+    if (key === 'sounds') info.name = 'Word Parts';
+    if (key === 'blend') info.name = 'Chunk & Read';
+  }
+  return info;
+}
 
 function startLesson(levelId) {
   const p = activeProfile();
   const level = READING_LEVELS.find(l => l.id === levelId);
   const quick = p.settings.quick;
+  const cfg = gradeCfg(p);
+  const older = isOlder(p);
+  const hasVocab = cfg.vocab > 0 && typeof GRADE_WORDS !== 'undefined' && GRADE_WORDS[gradeOf(p)];
 
   let steps = quick
     ? ['sounds', 'blend', 'heart', 'story']
-    : ['sounds', 'blend', 'spell', 'heart', 'sentences', 'story'];
+    : ['sounds', 'blend', 'spell', 'heart', 'sentences', ...(hasVocab ? ['vocab'] : []), 'story'];
   if (p.settings.breaks) steps.splice(quick ? 2 : 3, 0, 'break');
 
   lesson = {
-    level, steps, stepIndex: 0, quick,
+    level, steps, stepIndex: 0, quick, cfg, older,
+    story: older && level.storyOlder ? level.storyOlder : level.story,
+    vocabResults: [], fluency: null,
     correct: 0, total: 0, stars: 0,
     missed: new Set(), reviewed: [],
     started: Date.now(),
@@ -360,12 +502,12 @@ function runStep() {
   stopSpeech();
   const L = lesson;
   $('#stepDots').innerHTML = L.steps.map((s, i) =>
-    `<span class="dot ${i < L.stepIndex ? 'done' : i === L.stepIndex ? 'now' : ''}" title="${STEP_INFO[s].name}">${STEP_INFO[s].icon}</span>`
+    `<span class="dot ${i < L.stepIndex ? 'done' : i === L.stepIndex ? 'now' : ''}" title="${stepInfo(s).name}">${stepInfo(s).icon}</span>`
   ).join('');
   if (L.stepIndex >= L.steps.length) { finishLesson(); return; }
   const step = L.steps[L.stepIndex];
   ({ sounds: stepSounds, blend: stepBlend, spell: stepSpell, heart: stepHeart,
-     sentences: stepSentences, story: stepStory, break: stepBreak })[step]();
+     sentences: stepSentences, story: stepStory, break: stepBreak, vocab: stepVocab })[step]();
   $('#activity').focus?.();
 }
 
@@ -381,7 +523,7 @@ function score(isCorrect, word) {
 }
 
 function activityShell(stepKey, instruction, body) {
-  const info = STEP_INFO[stepKey];
+  const info = stepInfo(stepKey);
   $('#activity').innerHTML = `
     <div class="act-card">
       <div class="act-head">
@@ -407,7 +549,8 @@ function findWord(word) {
 const toWordObj = (w, level) => ({ level, word: w[0], emoji: w[1], parts: w[2].split('|') });
 
 /* Render graphemes as sound boxes; "a_e" shows the vowel plus a magic e */
-function soundBoxes(parts) {
+function soundBoxes(parts, chunky = false) {
+  if (chunky) return parts.map(g => `<span class="sbox chunk">${g}</span>`).join('');
   const boxes = [];
   let magic = false;
   for (const g of parts) {
@@ -437,8 +580,9 @@ function stepSounds() {
   const cards = [...L.level.sounds.slice(0, L.quick ? 4 : 99), ...review];
   let i = 0;
 
-  activityShell('sounds',
-    'Look at the card. Say the sound out loud. Tap the picture to hear the key word. Then tap a button.',
+  activityShell('sounds', L.level.chunks
+    ? 'Read the word part out loud and say what it means or how it sounds. Tap the card to hear an example word.'
+    : 'Look at the card. Say the sound out loud. Tap the card to hear the key word. Then tap a button.',
     '<div id="soundCardArea"></div>');
 
   function show() {
@@ -449,6 +593,7 @@ function stepSounds() {
       <button class="sound-card" id="soundCard" aria-label="Hear ${c.key}">
         <span class="sc-g">${c.g.replace('_', '<span class="blank">_</span>')}</span>
         <span class="sc-key">${c.emoji} ${c.key}</span>
+        ${c.meaning ? `<span class="sc-meaning">💡 ${esc(c.meaning)}</span>` : ''}
       </button>
       <div class="row-btns">
         <button class="btn-primary" id="gotIt">✅ I said it!</button>
@@ -482,13 +627,14 @@ function stepBlend() {
     .slice(0, L.quick ? 1 : 3);
   const fresh = shuffle(L.level.words.map(w => toWordObj(w, L.level.id)))
     .filter(w => !reviewWords.some(r => r.word === w.word))
-    .slice(0, L.quick ? 4 : 6);
+    .slice(0, L.quick ? 4 : L.cfg.blend);
   const items = [...reviewWords.map(w => ({ ...w, isReview: true })), ...fresh];
   const pool = READING_LEVELS.filter(l => l.id <= L.level.id).flatMap(l => l.words.map(w => toWordObj(w, l.id)));
   let i = 0;
 
-  activityShell('blend',
-    'Touch each sound box and say its sound. Then slide them together and read the word. Pick the matching picture!',
+  activityShell('blend', L.level.chunks
+    ? 'Read each chunk. Then slide the chunks together and read the whole word. Pick the matching picture!'
+    : 'Touch each sound box and say its sound. Then slide them together and read the word. Pick the matching picture!',
     '<div id="blendArea"></div>');
 
   function show() {
@@ -499,7 +645,7 @@ function stepBlend() {
 
     $('#blendArea').innerHTML = `
       <div class="counter">${i + 1} / ${items.length}${w.isReview ? ' · 🔁 review word' : ''}</div>
-      <div class="sound-boxes" id="boxes">${soundBoxes(w.parts)}</div>
+      <div class="sound-boxes" id="boxes">${soundBoxes(w.parts, READING_LEVELS[w.level - 1].chunks)}</div>
       <div class="row-btns">
         <button class="btn-secondary" id="slideBtn">👉 Slide it together</button>
       </div>
@@ -528,7 +674,7 @@ function stepBlend() {
         if (w.isReview) lesson.reviewed.push({ word: w.word, ok: firstTry });
         btn.classList.add('correct');
         $$('.pic-btn').forEach(b => b.disabled = true);
-        $('#blendFb').innerHTML = `<span class="feedback-text correct">🎉 ${esc(w.word)}! ${pick(PRAISE)}</span>
+        $('#blendFb').innerHTML = `<span class="feedback-text correct">🎉 ${esc(w.word)}! ${praise()}</span>
           <button class="next-btn" id="nextBlend">Next →</button>`;
         speak(w.word);
         $('#nextBlend').addEventListener('click', () => { i++; show(); });
@@ -537,7 +683,7 @@ function stepBlend() {
         if (firstTry) { firstTry = false; }
         btn.classList.add('incorrect');
         btn.disabled = true;
-        $('#blendFb').innerHTML = `<span class="feedback-text wrong">${pick(GENTLE_RETRY)}</span>`;
+        $('#blendFb').innerHTML = `<span class="feedback-text wrong">${retry()}</span>`;
         // Model the blend, then let the child try again (errorless learning)
         $('#slideBtn').click();
         setTimeout(() => speak(w.word), 600);
@@ -550,12 +696,13 @@ function stepBlend() {
 /* ---------- STEP: Build the Word (encoding / spelling) ---------- */
 function stepSpell() {
   const L = lesson;
-  const items = shuffle(L.level.words.map(w => toWordObj(w, L.level.id))).slice(0, 4);
+  const items = shuffle(L.level.words.map(w => toWordObj(w, L.level.id))).slice(0, L.cfg.spell);
   const allTiles = [...new Set(L.level.words.flatMap(w => spellTiles(w[2].split('|'))))];
   let i = 0;
 
-  activityShell('spell',
-    'Listen to the word. Say each sound slowly. Tap the letters in order to build the word.',
+  activityShell('spell', L.level.chunks
+    ? 'Listen to the word. Break it into chunks. Tap the chunks in order to build the word.'
+    : 'Listen to the word. Say each sound slowly. Tap the letters in order to build the word.',
     '<div id="spellArea"></div>');
 
   function show() {
@@ -606,7 +753,7 @@ function stepSpell() {
       if (attempt === target.join('')) {
         score(firstTry, w.word);
         $('#slots').classList.add('solved');
-        $('#spellFb').innerHTML = `<span class="feedback-text correct">🎉 You built "${esc(w.word)}"! ${pick(PRAISE)}</span>
+        $('#spellFb').innerHTML = `<span class="feedback-text correct">🎉 You built "${esc(w.word)}"! ${praise()}</span>
           <button class="next-btn" id="nextSpell">Next →</button>`;
         speak(w.word);
         $('#checkSpell').disabled = true;
@@ -620,7 +767,7 @@ function stepSpell() {
         built.slice(keep).forEach(b => { b.el.disabled = false; });
         built = built.slice(0, keep);
         paint();
-        $('#spellFb').innerHTML = `<span class="feedback-text wrong">${pick(GENTLE_RETRY)} The first ${built.length} letter${built.length === 1 ? ' is' : 's are'} right.</span>`;
+        $('#spellFb').innerHTML = `<span class="feedback-text wrong">${retry()} The first ${built.length} letter${built.length === 1 ? ' is' : 's are'} right.</span>`;
         speak(w.word, { rate: 0.5 });
       }
     });
@@ -676,7 +823,7 @@ function stepHeart() {
           btn.classList.add('incorrect');
           btn.disabled = true;
           $('#heartCard').classList.remove('hidden-word');
-          $('#heartFb').innerHTML = `<span class="feedback-text wrong">${pick(GENTLE_RETRY)} Look at the card again.</span>`;
+          $('#heartFb').innerHTML = `<span class="feedback-text wrong">${retry()} Look at the card again.</span>`;
           speak(word);
         }
       }));
@@ -689,8 +836,8 @@ function stepHeart() {
 function wordSpans(text) {
   return text.split(/\s+/).map(w => `<button class="rw" data-w="${esc(cleanWord(w))}">${esc(w)}</button>`).join(' ');
 }
-function wireTapWords(root) {
-  $$('.rw', root).forEach(b => b.addEventListener('click', () => speak(b.dataset.w)));
+function wireTapWords(root, onTap) {
+  $$('.rw', root).forEach(b => b.addEventListener('click', () => { onTap?.(); speak(b.dataset.w); }));
 }
 /* Highlight each word as it is spoken — like a finger under the words */
 async function echoRead(lineEl) {
@@ -727,7 +874,7 @@ function stepSentences() {
     wireTapWords($('#sentLine'));
     $('#echoBtn').addEventListener('click', () => { stopSpeech(); echoRead($('#sentLine')); });
     $('#soloBtn').addEventListener('click', () => {
-      showToast(pick(PRAISE), 'correct');
+      showToast(praise(), 'correct');
       i++; show();
     });
   }
@@ -737,23 +884,27 @@ function stepSentences() {
 /* ---------- STEP: Story Time (fluency + comprehension) ---------- */
 function stepStory() {
   const L = lesson;
-  const story = L.level.story;
-  const lines = story.text.match(/[^.!?]+[.!?]+/g).map(s => s.trim());
+  const story = L.story;
+  const lines = story.text.match(/[^.!?]+[.!?"]+/g).map(s => s.trim());
+  const wordCount = story.text.split(/\s+/).length;
+  const canTime = gradeOf() !== 'K';
   let line = 0;
   let firstTry = true;
+  let timer = null;   // { start, assisted } while a timed read is running
 
   activityShell('story',
-    'Read the story one line at a time. Tap any word to hear it. Use Read to me if you want to hear it first.',
+    'Read the story one line at a time. Tap any word to hear it. Use Read to me if you want to hear it first.' +
+      (canTime ? ' Want a challenge? Time your reading!' : ''),
     `<h4 class="story-title">${esc(story.title)}</h4>
      <div class="story tinted" id="story">${lines.map((s, k) =>
        `<p class="story-line" data-k="${k}">${wordSpans(s)}</p>`).join('')}</div>
      <div class="row-btns">
        <button class="btn-secondary" id="storyEcho">🔊 Read this line to me</button>
        <button class="btn-primary" id="storyNext">Next line ↓</button>
+       ${canTime ? '<button class="btn-outline" id="storyTime">⏱ Time my reading</button>' : ''}
      </div>
      <div id="storyQ"></div>`);
 
-  wireTapWords($('#story'));
   const lineEls = $$('.story-line');
   function focusLine() {
     lineEls.forEach((el, k) => {
@@ -764,10 +915,31 @@ function stepStory() {
   }
   focusLine();
 
-  $('#storyEcho').addEventListener('click', () => { stopSpeech(); echoRead(lineEls[line]); });
+  $('#storyEcho').addEventListener('click', () => {
+    if (timer) timer.assisted = true;
+    stopSpeech();
+    echoRead(lineEls[line]);
+  });
+  $('#storyTime')?.addEventListener('click', () => {
+    timer = { start: Date.now(), assisted: false };
+    line = 0;
+    focusLine();
+    $('#storyTime').textContent = '⏱ Timing… read out loud!';
+    $('#storyTime').disabled = true;
+    instruct('Go! Read out loud, then tap next line.');
+  });
+  wireTapWords($('#story'), () => { if (timer) timer.assisted = true; });
   $('#storyNext').addEventListener('click', () => {
     stopSpeech();
     if (line < lines.length - 1) { line++; focusLine(); return; }
+    if (timer) {
+      const secs = Math.max(5, (Date.now() - timer.start) / 1000);
+      const wpm = Math.round(wordCount / (secs / 60));
+      // Faster than any real read-aloud means lines were tapped through, not read
+      L.fluency = { wpm, assisted: timer.assisted, skipped: wpm > MAX_REAL_WPM };
+      showToast(L.fluency.skipped ? 'Too fast to count — read every line out loud!' : `⏱ ${wpm} words per minute!`,
+        L.fluency.skipped ? 'wrong' : 'correct');
+    }
     lineEls.forEach(el => el.classList.remove('current', 'done'));
     $('#storyEcho').parentElement.remove();
     askQuestion();
@@ -789,7 +961,7 @@ function stepStory() {
         score(firstTry);
         btn.classList.add('correct');
         $$('#storyQ .choice-btn').forEach(b => b.disabled = true);
-        $('#storyFb').innerHTML = `<span class="feedback-text correct">🎉 You understood the story!</span>
+        $('#storyFb').innerHTML = `<span class="feedback-text correct">🎉 ${L.older ? 'You understood the passage.' : 'You understood the story!'}</span>
           <button class="next-btn" id="storyDone">🏆 Finish lesson</button>`;
         $('#storyDone').addEventListener('click', () => L.next());
         $('#storyDone').focus();
@@ -803,11 +975,64 @@ function stepStory() {
   }
 }
 
+/* ---------- STEP: Grade Words (vocabulary from the child's grade list) ---------- */
+function stepVocab() {
+  const L = lesson;
+  const p = activeProfile();
+  // Words never seen come first, then the ones answered right the fewest times
+  const list = shuffle([...GRADE_WORDS[gradeOf(p)]])
+    .sort((a, b) => (p.vocab[a.word] ?? -1) - (p.vocab[b.word] ?? -1))
+    .slice(0, L.cfg.vocab);
+  let i = 0;
+
+  activityShell('vocab',
+    `These are ${L.cfg.label} words. Read the sentence, use the clues, and choose what the word means.`,
+    '<div id="vocabArea"></div>');
+
+  function show() {
+    if (i >= list.length) { L.next(); return; }
+    const w = list[i];
+    let firstTry = true;
+    $('#vocabArea').innerHTML = `
+      <div class="counter">${i + 1} / ${list.length}</div>
+      <button class="vocab-word" id="vocabWord" aria-label="Hear ${esc(w.word)}">${esc(w.word)} <span>🔊</span></button>
+      <div class="read-line tinted" id="vocabSent">${wordSpans(w.contextSentence)}</div>
+      <p class="find-q">${esc(w.contextQuestion)}</p>
+      <div class="context-choices">${w.contextChoices.map((c, k) =>
+        `<button class="choice-btn" data-k="${k}"><span class="choice-letter">${'ABCD'[k]}</span><span>${esc(c)}</span></button>`).join('')}</div>
+      <div class="feedback-box" id="vocabFb"></div>`;
+    $$('#vocabSent .rw').forEach(b => {
+      if (b.dataset.w.toLowerCase().startsWith(w.word.toLowerCase())) b.classList.add('target');
+    });
+    wireTapWords($('#vocabSent'));
+    $('#vocabWord').addEventListener('click', () => speak(w.word));
+    $$('#vocabArea .choice-btn').forEach(btn => btn.addEventListener('click', () => {
+      if (+btn.dataset.k === w.contextAnswer) {
+        score(firstTry);
+        L.vocabResults.push({ word: w.word, ok: firstTry });
+        btn.classList.add('correct');
+        $$('#vocabArea .choice-btn').forEach(b => b.disabled = true);
+        $('#vocabFb').innerHTML = `<span class="feedback-text correct">✅ <b>${esc(w.word)}</b>: ${esc(w.definition)}</span>
+          <button class="next-btn" id="nextVocab">Next →</button>`;
+        speak(`${w.word}. ${w.definition}`);
+        $('#nextVocab').addEventListener('click', () => { i++; show(); });
+        $('#nextVocab').focus();
+      } else {
+        firstTry = false;
+        btn.classList.add('incorrect');
+        btn.disabled = true;
+        $('#vocabFb').innerHTML = `<span class="feedback-text wrong">${retry()} Reread the sentence for clues.</span>`;
+      }
+    }));
+  }
+  show();
+}
+
 /* ---------- STEP: Brain Break ---------- */
 function stepBreak() {
   const L = lesson;
-  const b = pick(BRAIN_BREAKS);
-  activityShell('break', `Brain break! ${b.text}`, `
+  const b = pick(L.older ? BRAIN_BREAKS_OLDER : BRAIN_BREAKS);
+  activityShell('break', `${L.older ? 'Quick reset.' : 'Brain break!'} ${b.text}`, `
     <div class="break-card">
       <div class="break-emoji">${b.emoji}</div>
       <div class="break-text">${esc(b.text)}</div>
@@ -849,6 +1074,15 @@ function finishLesson() {
     if (findWord(w)) p.review[w] = { level: L.level.id, box: 0 };
   }
 
+  for (const v of L.vocabResults) {
+    p.vocab[v.word] = v.ok ? (p.vocab[v.word] ?? 0) + 1 : 0;
+  }
+  // Only independent timed reads count toward reading speed
+  if (L.fluency && !L.fluency.assisted && !L.fluency.skipped) {
+    p.fluency.push({ date: today(), level: L.level.id, wpm: L.fluency.wpm });
+    p.fluency = p.fluency.slice(-30);
+  }
+
   p.stars += L.stars + (justMastered ? 5 : 0);
   p.minutes += mins;
   if (!p.days.includes(today())) p.days.push(today());
@@ -868,7 +1102,9 @@ function finishLesson() {
     launchConfetti();
   } else {
     title = '💪 Great Practice!';
-    msg = `You got ${pct}% on your own. Practice this level again tomorrow — brains grow with practice!`;
+    msg = L.older
+      ? `You got ${pct}% on your own. Run this level again tomorrow — repetition is how reading gets automatic.`
+      : `You got ${pct}% on your own. Practice this level again tomorrow — brains grow with practice!`;
   }
   const missed = [...L.missed];
 
@@ -879,6 +1115,8 @@ function finishLesson() {
       <h3 class="result-title">${title}</h3>
       <p class="result-msg">${msg}</p>
       <div class="result-stars">${'⭐'.repeat(Math.min(L.stars, 12))}</div>
+      ${L.fluency && !L.fluency.skipped ? `<p class="practice-note">⏱ Reading speed: <b>${L.fluency.wpm} words per minute</b>${
+        L.fluency.assisted ? ' (with help — try it solo next time!)' : ''}</p>` : ''}
       ${missed.length ? `<p class="practice-note">🔁 We'll practice these again next time: <b>${missed.map(esc).join(', ')}</b></p>` : ''}
       <div class="row-btns">
         <button class="btn-primary" id="toMap">🗺️ My Path</button>
@@ -907,11 +1145,34 @@ function renderParent() {
         <span class="lvl-pct">${r ? pct + '%' : (l.id <= p.unlocked ? '—' : '🔒')}</span>
       </div>`;
     }).join('');
+    const cfg = gradeCfg(p);
+    const gradeList = GRADE_WORDS?.[gradeOf(p)] || [];
+    const vocabKnown = gradeList.filter(w => (p.vocab[w.word] ?? 0) >= 2).length;
+    const vocabSeen = gradeList.filter(w => w.word in p.vocab).length;
+    const solo = p.fluency;
+    const latest = solo[solo.length - 1];
+    const best = solo.reduce((m, f) => Math.max(m, f.wpm), 0);
+    const goalPct = latest && cfg.wcpm ? Math.min(100, Math.round(latest.wpm / cfg.wcpm * 100)) : 0;
+    const fluencyHtml = !cfg.wcpm ? '<p>Timed reading starts in Grade 1. For now, focus on sounds and blending.</p>' : `
+        <div class="lvl-row">
+          <span class="lvl-name">Latest: ${latest ? latest.wpm + ' wpm' : '—'}</span>
+          <span class="lvl-bar"><span style="width:${goalPct}%"></span></span>
+          <span class="lvl-pct">${cfg.wcpm}</span>
+        </div>
+        <p class="fine">Best: ${best || '—'} wpm · Typical end of ${cfg.label}: ${cfg.wcpm} words per minute.
+          ${solo.length > 1 ? `Change since first timed read: <b>${latest.wpm - solo[0].wpm >= 0 ? '+' : ''}${latest.wpm - solo[0].wpm} wpm</b>.` : ''}
+          Kids with learning differences often read below the typical rate — steady growth is the goal.</p>`;
     const recent = p.log.slice(0, 5).map(e =>
       `<li>${e.date} · Level ${e.level} · ${e.acc}% · ${e.mins} min</li>`).join('') || '<li>No lessons yet.</li>';
     return `
       <section class="parent-card">
-        <header><span class="pf-avatar">${p.avatar}</span><h3>${esc(p.name)}</h3></header>
+        <header><span class="pf-avatar">${p.avatar}</span><h3>${esc(p.name)}</h3>
+          <label class="place-label">Grade
+            <select data-grade="${p.id}">${GRADE_KEYS.map(g =>
+              `<option value="${g}" ${g === gradeOf(p) ? 'selected' : ''}>${GRADES[g].label}</option>`).join('')}
+            </select>
+          </label>
+        </header>
         <div class="kpis">
           <div><b>${mastered}</b><span>levels mastered</span></div>
           <div><b>${p.minutes}</b><span>minutes read</span></div>
@@ -920,6 +1181,10 @@ function renderParent() {
         </div>
         <h4>Level progress <small>(best first-try accuracy · ${Math.round(MASTERY * 100)}% = mastered)</small></h4>
         ${rows}
+        <h4>Reading speed <small>(timed passages read without help)</small></h4>
+        ${fluencyHtml}
+        ${gradeList.length && cfg.vocab ? `<h4>${cfg.label} vocabulary</h4>
+        <p>${vocabKnown} of ${gradeList.length} words known (right twice in a row) · ${vocabSeen} practiced so far</p>` : ''}
         <h4>Words to review</h4>
         <p>${review.length ? review.map(esc).join(', ') : 'None — great job! 🎉'}</p>
         <h4>Recent lessons</h4>
@@ -930,6 +1195,7 @@ function renderParent() {
               `<option value="${l.id}" ${l.id === p.unlocked ? 'selected' : ''}>Level ${l.id}: ${l.title}</option>`).join('')}
             </select>
           </label>
+          <button class="btn-secondary" data-check="${p.id}">🧭 Placement check</button>
           <button class="btn-outline" data-del="${p.id}">🗑 Remove reader</button>
         </div>
       </section>`;
@@ -945,7 +1211,8 @@ function renderParent() {
         <li><b>Have them read out loud every time.</b> Saying, seeing and hearing at once (multisensory learning) builds stronger memory pathways.</li>
         <li><b>Don't rush mastery.</b> A level unlocks at ${Math.round(MASTERY * 100)}% first-try accuracy. Repeating a level is normal and builds automaticity.</li>
         <li><b>Praise effort, not speed.</b> Say "You kept trying on that hard word!" instead of "You're so smart."</li>
-        <li><b>Placement:</b> If your child already knows early sounds, use "Starting level" above to begin where they need practice. If accuracy is below 60%, move back one level.</li>
+        <li><b>Placement:</b> Run the 2-minute placement check, or pick a starting level above. If accuracy stays below 60%, move back one level.</li>
+        <li><b>Grade setting:</b> It doesn't lock your child into grade-level material. It sets the target level, lesson length, grade vocabulary, the reading-speed goal, and a more grown-up tone for Grades 3–8 — while lessons still meet them at their real skill level.</li>
       </ul>
       <h3>🧠 Helpers for different learners</h3>
       <ul>
@@ -963,6 +1230,19 @@ function renderParent() {
     store.profiles[sel.dataset.place].unlocked = +sel.value;
     saveStore();
     showToast('Starting level updated ✔', 'correct');
+  }));
+  $$('[data-grade]').forEach(sel => sel.addEventListener('change', () => {
+    store.profiles[sel.dataset.grade].grade = sel.value;
+    saveStore();
+    applySettings();
+    renderParent();
+    showToast('Grade updated ✔', 'correct');
+  }));
+  $$('[data-check]').forEach(btn => btn.addEventListener('click', () => {
+    store.activeId = btn.dataset.check;
+    saveStore();
+    applySettings();
+    renderStartChoice(activeProfile());
   }));
   $$('[data-del]').forEach(btn => btn.addEventListener('click', () => {
     const p = store.profiles[btn.dataset.del];

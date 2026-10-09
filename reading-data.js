@@ -14,6 +14,7 @@ const READING_LEVELS = [
     id: 1,
     title: 'Short A',
     icon: '🍎',
+    grades: 'K–1',
     focus: 'Letters a, m, s, t, p, n, c and the short "a" sound',
     sounds: [
       { g: 'a', key: 'apple',  emoji: '🍎' },
@@ -38,11 +39,19 @@ const READING_LEVELS = [
       choices: ['A cat', 'A man', 'A map'],
       answer: 0,
     },
+    storyOlder: {
+      title: 'Camp',
+      text: 'Sam is at camp. Sam can scan the map. Tam can stamp the map. A cat naps at the camp. Sam can pat the cat.',
+      question: 'What can Sam scan?',
+      choices: ['The map', 'The cat', 'A pan'],
+      answer: 0,
+    },
   },
   {
     id: 2,
     title: 'Short I',
     icon: '🐷',
+    grades: 'K–1',
     focus: 'Short "i" plus f, d, h, g',
     sounds: [
       { g: 'i', key: 'igloo',  emoji: '🛖' },
@@ -65,11 +74,19 @@ const READING_LEVELS = [
       choices: ['A hat', 'A pit', 'A map'],
       answer: 1,
     },
+    storyOlder: {
+      title: 'The Dig',
+      text: 'Tim and Matt dig in the sand. Tim hits a big tin. In the tin is a map. The map has a big X. Tim and Matt dig at the X!',
+      question: 'What was in the tin?',
+      choices: ['A hat', 'A map', 'Sand'],
+      answer: 1,
+    },
   },
   {
     id: 3,
     title: 'Short O',
     icon: '🐶',
+    grades: 'K–1',
     focus: 'Short "o" plus b, l, r',
     sounds: [
       { g: 'o', key: 'octopus', emoji: '🐙' },
@@ -91,11 +108,19 @@ const READING_LEVELS = [
       choices: ['On the pot', 'On a log', 'On a bed'],
       answer: 1,
     },
+    storyOlder: {
+      title: 'The Lab Robot',
+      text: 'Rob has a lab. In the lab is a robot. The robot can lift a log. It can mop. Rob said, "Stop, robot!" The robot did not stop. It hit a lot of pots!',
+      question: 'What did the robot hit?',
+      choices: ['A log', 'A lot of pots', 'Rob'],
+      answer: 1,
+    },
   },
   {
     id: 4,
     title: 'Short U & E',
     icon: '🐛',
+    grades: 'K–1',
     focus: 'Short "u" and short "e" plus j, w, k',
     sounds: [
       { g: 'u', key: 'umbrella', emoji: '☂️' },
@@ -118,11 +143,19 @@ const READING_LEVELS = [
       choices: ['Red', 'Tan', 'Pink'],
       answer: 0,
     },
+    storyOlder: {
+      title: 'The Big Kick',
+      text: 'Jen and Kim are on a team. Jen can run. Kim can kick. Kim kicks it to Jen. Jen runs and kicks. It hits the net! Jen and Kim win!',
+      question: 'Who kicked it into the net?',
+      choices: ['Kim', 'Jen', 'The fans'],
+      answer: 1,
+    },
   },
   {
     id: 5,
     title: 'Digraphs',
     icon: '🐟',
+    grades: '1',
     focus: 'Two letters, one sound: sh, ch, th, ck',
     sounds: [
       { g: 'sh', key: 'ship',  emoji: '🚢' },
@@ -144,11 +177,19 @@ const READING_LEVELS = [
       choices: ['A fish', 'A chip', 'A shell'],
       answer: 1,
     },
+    storyOlder: {
+      title: 'The Fish on the Ship',
+      text: 'Chad and his dad went to fish on a ship. Chad cast his rod. Then, a big tug! Chad did not quit. At last, Chad got a fish as big as a dish. Chad and his dad got a pic of it.',
+      question: 'Where did Chad and his dad fish?',
+      choices: ['On a dock', 'On a ship', 'In a pond'],
+      answer: 1,
+    },
   },
   {
     id: 6,
     title: 'Blends',
     icon: '🐸',
+    grades: '1',
     focus: 'Two consonants, two sounds: st, fl, tr, cr, fr, nd, mp',
     sounds: [
       { g: 'st', key: 'star',  emoji: '⭐' },
@@ -173,11 +214,19 @@ const READING_LEVELS = [
       choices: ['The frog', 'The crab', 'The plant'],
       answer: 1,
     },
+    storyOlder: {
+      title: 'The Sprint',
+      text: 'Brad and Fran went to the track to sprint. Fran felt strong. Brad felt stiff. Bang! They ran. At the end, Fran was just a step in front. Then they had a big drink and a rest.',
+      question: 'Who was in front at the end?',
+      choices: ['Brad', 'Fran', 'The coach'],
+      answer: 1,
+    },
   },
   {
     id: 7,
     title: 'Magic E',
     icon: '🪁',
+    grades: '1–2',
     focus: 'Silent "e" makes the vowel say its name: a_e, i_e, o_e, u_e',
     sounds: [
       { g: 'a_e', key: 'cake', emoji: '🎂' },
@@ -199,11 +248,19 @@ const READING_LEVELS = [
       choices: ['A cake', 'A bike bell', 'A kite'],
       answer: 2,
     },
+    storyOlder: {
+      title: 'The Bike Race',
+      text: 'Jake and Kate rode bikes in a race. The route went up a hill and past a lake. Jake had a flat tire and had to stop. Kate came back to help. They made it home in time. It was not a win, but it was a fine ride.',
+      question: 'Why did Jake stop?',
+      choices: ['He had a flat tire', 'He saw a lake', 'He won the race'],
+      answer: 0,
+    },
   },
   {
     id: 8,
     title: 'Vowel Teams',
     icon: '⛵',
+    grades: '1–2',
     focus: 'Two vowels work together: ai, ay, ee, ea, oa',
     sounds: [
       { g: 'ai', key: 'rain',  emoji: '🌧️' },
@@ -226,11 +283,19 @@ const READING_LEVELS = [
       choices: ['A goat', 'A seal', 'A bee'],
       answer: 1,
     },
+    storyOlder: {
+      title: 'Race Day',
+      text: 'On race day, Dean waited at the lane. He had trained each week. Gail said, "Stay calm and keep your feet steady." Dean sped down the lane and beat his best time. His team cheered.',
+      question: 'What did Dean beat?',
+      choices: ['Gail', 'His best time', 'The whole team'],
+      answer: 1,
+    },
   },
   {
     id: 9,
     title: 'Bossy R',
     icon: '🌟',
+    grades: '2',
     focus: 'R changes the vowel: ar, or, er, ir, ur',
     sounds: [
       { g: 'ar', key: 'car',   emoji: '🚗' },
@@ -242,7 +307,7 @@ const READING_LEVELS = [
     words: [
       ['car', '🚗', 'c|ar'], ['star', '⭐', 's|t|ar'], ['corn', '🌽', 'c|or|n'],
       ['fork', '🍴', 'f|or|k'], ['bird', '🐦', 'b|ir|d'], ['shirt', '👕', 'sh|ir|t'],
-      ['farm', '🚜', 'f|ar|m'], ['purse', '👛', 'p|ur|s'],
+      ['farm', '🚜', 'f|ar|m'], ['church', '⛪', 'ch|ur|ch'],
     ],
     heartWords: ['laugh', 'eye', 'busy', 'only'],
     sentences: ['The bird is on the barn.', 'Carl ate the corn.', 'The car is dark.', 'Her shirt has a star.'],
@@ -253,11 +318,20 @@ const READING_LEVELS = [
       choices: ['A bird', 'A hen', 'A star'],
       answer: 0,
     },
+    storyOlder: {
+      title: 'The Storm',
+      text: 'The storm came after dark. The wind was so strong it tore a branch off the birch tree. Marta and her brother had no power, so they lit a lantern. They sat in a warm corner and played cards until the storm was over.',
+      question: 'What did they use for light?',
+      choices: ['A lantern', 'A flashlight', 'The stars'],
+      answer: 0,
+    },
   },
   {
     id: 10,
     title: 'Big Words',
     icon: '🌈',
+    grades: '2–3',
+    chunks: true,
     focus: 'Two-syllable and compound words — chunk it, then read it',
     sounds: [
       { g: 'sun·set',  key: 'sunset',  emoji: '🌅' },
@@ -279,8 +353,152 @@ const READING_LEVELS = [
       choices: ['A rabbit', 'A frog', 'A bird'],
       answer: 0,
     },
+    storyOlder: {
+      title: 'The Contest',
+      text: 'Kendra entered the science contest with a robot she built from a basket and a magnet. The robot could pick up tin cans. At the contest, it stopped working! Kendra did not panic. She found the problem with the magnet, fixed it, and the robot picked up ten cans. She got second place.',
+      question: 'What did Kendra do when the robot stopped?',
+      choices: ['She gave up', 'She fixed the magnet', 'She went home'],
+      answer: 1,
+    },
+  },
+  {
+    id: 11,
+    title: 'Word Endings',
+    icon: '🦘',
+    grades: '2–3',
+    chunks: true,
+    focus: 'Suffixes change a word: -ing, -ed, -est, -ful, -less, -ly',
+    sounds: [
+      { g: '-ing',  key: 'jumping',  emoji: '🦘', meaning: 'doing it now' },
+      { g: '-ed',   key: 'painted',  emoji: '🎨', meaning: 'it already happened' },
+      { g: '-est',  key: 'fastest',  emoji: '🏃', meaning: 'the most' },
+      { g: '-ful',  key: 'helpful',  emoji: '🤝', meaning: 'full of' },
+      { g: '-less', key: 'careless', emoji: '🫗', meaning: 'without' },
+      { g: '-ly',   key: 'slowly',   emoji: '🐢', meaning: 'in a way that is' },
+    ],
+    words: [
+      ['jumping', '🦘', 'jump|ing'], ['painted', '🎨', 'paint|ed'], ['fastest', '🏃', 'fast|est'],
+      ['helpful', '🤝', 'help|ful'], ['thankful', '🙏', 'thank|ful'], ['slowly', '🐢', 'slow|ly'],
+      ['quickly', '⚡', 'quick|ly'], ['spotless', '✨', 'spot|less'],
+    ],
+    heartWords: ['though', 'enough', 'thought', 'caught'],
+    sentences: ['The kangaroo is jumping.', 'She was thankful for the gift.', 'The turtle walked slowly.', 'He painted the fence.'],
+    story: {
+      title: 'The Helpful Neighbor',
+      text: 'Hank Hardy was careless and left his garden hose running all night. His yard flooded quickly. Ana, his helpful neighbor, rushed over. She turned off the water and helped him sweep the mud. Hank was thankful. The next day, he painted a sign that said, "Thank you, Ana!"',
+      question: 'What did Hank leave running?',
+      choices: ['His car', 'His garden hose', 'His radio'],
+      answer: 1,
+    },
+  },
+  {
+    id: 12,
+    title: 'Prefixes',
+    icon: '🔓',
+    grades: '3–4',
+    chunks: true,
+    focus: 'Prefixes change the meaning: un-, re-, pre-, dis-, mis-',
+    sounds: [
+      { g: 'un-',  key: 'unlock',   emoji: '🔓', meaning: 'not, or the opposite' },
+      { g: 're-',  key: 'redo',     emoji: '🔁', meaning: 'again' },
+      { g: 'pre-', key: 'preview',  emoji: '👀', meaning: 'before' },
+      { g: 'dis-', key: 'dislike',  emoji: '👎', meaning: 'not, or the opposite' },
+      { g: 'mis-', key: 'misspell', emoji: '❌', meaning: 'wrongly' },
+    ],
+    words: [
+      ['unlock', '🔓', 'un|lock'], ['redo', '🔁', 're|do'], ['preview', '👀', 'pre|view'],
+      ['dislike', '👎', 'dis|like'], ['misspell', '❌', 'mis|spell'], ['unhappy', '😞', 'un|hap|py'],
+      ['rewrite', '✍️', 're|write'], ['disappear', '🫥', 'dis|ap|pear'],
+    ],
+    heartWords: ['answer', 'different', 'special', 'beautiful'],
+    sentences: ['Please unlock the door.', 'I will redo my homework.', 'Do not misspell your name.', 'The magician made the coin disappear.'],
+    story: {
+      title: 'Rewriting the Ending',
+      text: 'Leo disliked the ending of his story. It felt unfinished and a little unfair to the hero. His teacher said he could rewrite it. Leo reread the whole thing, fixed a few misspelled words, and gave the hero a better ending. When he shared it, the class was not disappointed.',
+      question: 'Why did Leo rewrite his story?',
+      choices: ['He lost it', 'He disliked the ending', 'His friend asked him to'],
+      answer: 1,
+    },
+  },
+  {
+    id: 13,
+    title: 'Big Chunks',
+    icon: '🧭',
+    grades: '4–5',
+    chunks: true,
+    focus: 'Long-word chunks: -tion, -sion, -ture, -ous',
+    sounds: [
+      { g: '-tion', key: 'station',   emoji: '🚉', meaning: 'says "shun"' },
+      { g: '-sion', key: 'television', emoji: '📺', meaning: 'says "zhun" or "shun"' },
+      { g: '-ture', key: 'picture',   emoji: '🖼️', meaning: 'says "cher"' },
+      { g: '-ous',  key: 'famous',    emoji: '🌟', meaning: 'says "us" — full of' },
+    ],
+    words: [
+      ['picture', '🖼️', 'pic|ture'], ['nature', '🌿', 'na|ture'], ['station', '🚉', 'sta|tion'],
+      ['vacation', '🏖️', 'va|ca|tion'], ['famous', '🌟', 'fa|mous'], ['television', '📺', 'tel|e|vi|sion'],
+      ['adventure', '🧭', 'ad|ven|ture'], ['invention', '💡', 'in|ven|tion'],
+    ],
+    heartWords: ['ocean', 'island', 'straight', 'piece'],
+    sentences: ['We took a picture of nature.', 'The train left the station.', 'Her invention made her famous.', 'We went on an adventure.'],
+    story: {
+      title: 'The Invention',
+      text: 'On vacation, Maria had an idea for an invention: a picture frame that waters plants. She drew a design and tested it at the nature station near the lake. The first version leaked everywhere! After some adjustments, it worked. Her invention was on the local television news, and for one day, she was famous.',
+      question: 'What did Maria\'s invention do?',
+      choices: ['It took pictures', 'It watered plants', 'It cleaned the lake'],
+      answer: 1,
+    },
+  },
+  {
+    id: 14,
+    title: 'Word Roots',
+    icon: '🔬',
+    grades: '5–8',
+    chunks: true,
+    focus: 'Greek & Latin roots unlock thousands of words: tele, graph, port, struct, dict, scope',
+    sounds: [
+      { g: 'tele',   key: 'telephone',  emoji: '☎️', meaning: 'far' },
+      { g: 'graph',  key: 'autograph',  emoji: '✍️', meaning: 'write or draw' },
+      { g: 'port',   key: 'transport',  emoji: '🚚', meaning: 'carry' },
+      { g: 'struct', key: 'construct',  emoji: '🏗️', meaning: 'build' },
+      { g: 'dict',   key: 'predict',    emoji: '🔮', meaning: 'say' },
+      { g: 'scope',  key: 'microscope', emoji: '🔬', meaning: 'look at' },
+    ],
+    words: [
+      ['telephone', '☎️', 'tele|phone'], ['autograph', '✍️', 'auto|graph'], ['transport', '🚚', 'trans|port'],
+      ['construct', '🏗️', 'con|struct'], ['predict', '🔮', 'pre|dict'], ['microscope', '🔬', 'micro|scope'],
+      ['photograph', '📷', 'photo|graph'], ['telescope', '🔭', 'tele|scope'],
+    ],
+    heartWords: ['science', 'language', 'separate', 'necessary'],
+    sentences: ['I called my friend on the telephone.', 'The truck will transport the logs.', 'Can you predict the weather?', 'Look through the microscope.'],
+    story: {
+      title: 'Volcano Watch',
+      text: 'Scientists use many tools to predict when a volcano might erupt. A seismograph records how much the ground shakes. A satellite can photograph the volcano from space. If the signs point to danger, crews transport people to safety. These predictions can save thousands of lives.',
+      question: 'What does a seismograph record?',
+      choices: ['How hot the lava is', 'How much the ground shakes', 'How tall the volcano is'],
+      answer: 1,
+    },
   },
 ];
+
+/* ===================================================================
+   Grade settings — each grade gets its own starting point, lesson size,
+   tone, vocabulary practice and reading-rate goal.
+   wcpm = typical spring oral reading rate (50th percentile, words per
+   minute; Hasbrouck & Tindal norms). Shown to grown-ups as a long-term
+   goal only — for kids with learning differences, growth matters most.
+   =================================================================== */
+const GRADES = {
+  K: { label: 'Kindergarten', band: 'young', start: 1,  wcpm: null, vocab: 0, blend: 5, spell: 3 },
+  1: { label: 'Grade 1',      band: 'young', start: 1,  wcpm: 60,   vocab: 0, blend: 6, spell: 4 },
+  2: { label: 'Grade 2',      band: 'young', start: 4,  wcpm: 100,  vocab: 2, blend: 6, spell: 4 },
+  3: { label: 'Grade 3',      band: 'mid',   start: 7,  wcpm: 112,  vocab: 3, blend: 7, spell: 5 },
+  4: { label: 'Grade 4',      band: 'mid',   start: 9,  wcpm: 133,  vocab: 3, blend: 7, spell: 5 },
+  5: { label: 'Grade 5',      band: 'mid',   start: 11, wcpm: 146,  vocab: 3, blend: 8, spell: 5 },
+  6: { label: 'Grade 6',      band: 'teen',  start: 12, wcpm: 146,  vocab: 4, blend: 8, spell: 5 },
+  7: { label: 'Grade 7',      band: 'teen',  start: 13, wcpm: 150,  vocab: 4, blend: 8, spell: 5 },
+  8: { label: 'Grade 8',      band: 'teen',  start: 14, wcpm: 151,  vocab: 4, blend: 8, spell: 5 },
+};
+const GRADE_KEYS = ['K', '1', '2', '3', '4', '5', '6', '7', '8'];
 
 /* Short movement breaks — help kids with ADHD (and everyone!) reset focus */
 const BRAIN_BREAKS = [
@@ -293,6 +511,16 @@ const BRAIN_BREAKS = [
   { emoji: '🙆', text: 'Give yourself a big hug and say "I can do hard things!"' },
 ];
 
+/* Older readers (grades 3–8) get grown-up breaks and a less babyish tone */
+const BRAIN_BREAKS_OLDER = [
+  { emoji: '🧍', text: 'Stand up and stretch tall for 20 seconds.' },
+  { emoji: '🟦', text: 'Box breathing: in for 4, hold for 4, out for 4, hold for 4. Do it twice.' },
+  { emoji: '💪', text: 'Do 10 wall push-ups or 10 squats.' },
+  { emoji: '🔄', text: 'Roll your shoulders back 10 times, then forward 10 times.' },
+  { emoji: '👀', text: 'Rest your eyes: look at something far away for 20 seconds.' },
+  { emoji: '✊', text: 'Squeeze every muscle for 5 seconds, then relax. Repeat 3 times.' },
+];
+
 /* Encouragement that praises effort, not just correctness (growth mindset) */
 const PRAISE = [
   'You worked hard on that!', 'Great focus!', 'You kept trying — that is how brains grow!',
@@ -301,4 +529,12 @@ const PRAISE = [
 const GENTLE_RETRY = [
   'Almost! Let\'s try again together.', 'Good try! Listen and try once more.',
   'Mistakes help us learn. Try again!', 'Take a breath — you\'ve got this.',
+];
+const PRAISE_OLDER = [
+  'Nice work.', 'Solid reading.', 'That effort is paying off.',
+  'You stuck with it — that is how skills grow.', 'Strong decoding!', 'Good focus.',
+];
+const GENTLE_RETRY_OLDER = [
+  'Close — give it another look.', 'Not quite. Slow down and chunk it.',
+  'Mistakes are just data. Try again.', 'Almost. Listen once more and retry.',
 ];
