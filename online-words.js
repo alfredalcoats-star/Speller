@@ -71,11 +71,13 @@ const OnlineWords = (() => {
   const datamuse = params =>
     getJSON('https://api.datamuse.com/words?' + new URLSearchParams({ max: '1000', ...params }));
 
-  /* Free Dictionary: the first sense that has an example sentence using the word */
-  async function dictionaryEntry(word) {
+  /* Free Dictionary: the first sense that has an example sentence using the word.
+     With requireExample false, falls back to the first definition when no sense has one. */
+  async function dictionaryEntry(word, requireExample = true) {
     try {
       const data = await getJSON('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word));
       const wordRe = new RegExp(`\\b${word}\\b`, 'i');
+      let firstDef = null;
       for (const entry of data) {
         for (const meaning of entry.meanings || []) {
           for (const d of meaning.definitions || []) {
@@ -83,9 +85,11 @@ const OnlineWords = (() => {
             if (d.example && wordRe.test(d.example) && !wordRe.test(d.definition) && d.example.split(/\s+/).length >= 4) {
               return { definition: d.definition, example: d.example };
             }
+            if (!firstDef && d.definition && !wordRe.test(d.definition)) firstDef = d.definition;
           }
         }
       }
+      if (!requireExample && firstDef) return { definition: firstDef, example: '' };
     } catch (e) { /* no entry for this word */ }
     return null;
   }
@@ -457,6 +461,35 @@ const OnlineWords = (() => {
     });
   }
 
+  /** Meanings and example sentences for a grown-up's own word list.
+      Dictionary first, then one Claude request for whatever is left.
+      Returns { word: { definition, example } } for the words it could describe. */
+  async function describeWords(words) {
+    const out = {};
+    await Promise.all(words.slice(0, 50).map(async w => {
+      const entry = await dictionaryEntry(w.toLowerCase(), false);
+      if (entry && isSafe(entry.definition) && isSafe(entry.example)) {
+        out[w] = { definition: clean(entry.definition), example: clean(entry.example) };
+      }
+    }));
+    const missing = words.filter(w => !out[w] || !out[w].example);
+    if (missing.length) {
+      const data = await askClaude(
+        `For each of these words, give a short kid-friendly definition and one example sentence that ` +
+        `uses the exact word once and gives clues to its meaning: ${missing.join(', ')}. ` +
+        `Reply with only a JSON array: [{"word": "...", "definition": "...", "sentence": "..."}]`
+      );
+      if (Array.isArray(data)) {
+        for (const d of data) {
+          if (!d || !missing.includes(d.word) || typeof d.definition !== 'string' || typeof d.sentence !== 'string') continue;
+          if (!new RegExp(`\\b${d.word}\\b`, 'i').test(d.sentence) || !isSafe(d.definition) || !isSafe(d.sentence)) continue;
+          out[d.word] = { definition: out[d.word]?.definition || clean(d.definition), example: clean(d.sentence) };
+        }
+      }
+    }
+    return out;
+  }
+
   /** Where the last cached words for `key` came from: 'web', 'claude', 'none' or null */
   function sourceOf(key) { return readCache(key)?.source ?? null; }
 
@@ -465,5 +498,5 @@ const OnlineWords = (() => {
     return Promise.race([promise, new Promise(r => setTimeout(() => r(fallback), ms))]);
   }
 
-  return { gradeWords, levelWords, sourceOf, within, isSafe, decode, chunk };
+  return { gradeWords, levelWords, describeWords, sourceOf, within, isSafe, decode, chunk };
 })();

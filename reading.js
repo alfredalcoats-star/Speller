@@ -28,6 +28,8 @@ function loadStore() {
         p.vocab ??= {};
         p.fluency ??= [];
         p.settings.online ??= true;
+        p.listId ??= null;
+        p.listProgress ??= {};
       }
       return data;
     }
@@ -41,6 +43,18 @@ function saveStore() {
 const store = loadStore();
 
 function activeProfile() { return store.profiles[store.activeId] || null; }
+
+/* The grown-up's word list assigned to this reader, if it still exists and has words */
+function readerList(p = activeProfile()) {
+  if (!p?.listId || typeof WordLists === 'undefined') return null;
+  const list = WordLists.get(p.listId);
+  return list && list.words.length ? list : null;
+}
+const listKey = word => word.toLowerCase();
+function listMastered(p, list) {
+  const prog = p.listProgress[list.id] || {};
+  return list.words.filter(w => (prog[listKey(w.word)] ?? 0) >= 2).length;
+}
 
 /* ===== GRADE HELPERS ===== */
 function gradeOf(p = activeProfile()) { return GRADES[p?.grade] ? String(p.grade) : '1'; }
@@ -62,6 +76,8 @@ function newProfile(name, avatar, grade) {
     vocab: {},           // grade word -> box (times answered right in a row)
     fluency: [],         // timed passage reads: { date, level, wpm }
     placed: null,        // placement check result
+    listId: null,        // grown-up's word list assigned to this reader
+    listProgress: {},    // listId -> { word: times read + spelled right in a row }
     stars: 0,
     minutes: 0,
     days: [],            // ISO dates practiced
@@ -381,6 +397,7 @@ function renderMap() {
   const reviewCount = Object.keys(p.review).length;
   const streak = streakDays(p);
   const next = READING_LEVELS.find(l => l.id === p.unlocked) || READING_LEVELS[READING_LEVELS.length - 1];
+  const list = readerList(p);
   $('#todayCard').innerHTML = `
     <div class="today-main">
       <div class="today-icon">${next.icon}</div>
@@ -395,11 +412,14 @@ function renderMap() {
       <span>🔥 ${streak} day streak</span>
       <span>🔁 ${reviewCount} review word${reviewCount === 1 ? '' : 's'}</span>
       <span>⏱ ${p.settings.quick ? '~5' : '~12'} min</span>
+      ${list ? `<span>📝 ${esc(list.name)} · ${listMastered(p, list)}/${list.words.length} mastered</span>` : ''}
     </div>
     <button class="btn-primary big-go" id="startToday">▶ Start lesson</button>
+    ${list ? `<button class="btn-secondary big-go list-go" id="practiceList">📝 Practice my word list (${list.words.length} words)</button>` : ''}
     ${!p.placed && !p.log.length ? '<button class="link-btn" id="takeCheck">🧭 Not sure this is the right level? Take the 2-minute check</button>' : ''}
   `;
   $('#startToday').addEventListener('click', () => startLesson(next.id));
+  $('#practiceList')?.addEventListener('click', () => startLesson(next.id, { listOnly: true }));
   $('#takeCheck')?.addEventListener('click', () => renderStartChoice(p));
 
   $('#levelPath').innerHTML = READING_LEVELS.map(l => {
@@ -454,11 +474,12 @@ const STEP_INFO = {
   story:     { icon: '📖', name: 'Story Time' },
   break:     { icon: '🤸', name: 'Brain Break' },
   vocab:     { icon: '🧠', name: 'Grade Words' },
+  list:      { icon: '📝', name: 'My Word List' },
 };
 /* Grown-up names for older readers so lessons never feel babyish */
 const STEP_NAMES_OLDER = {
   sounds: 'Sound Patterns', heart: 'Tricky Words', story: 'Passage Reading',
-  break: 'Reset Break', vocab: 'Vocabulary Builder',
+  break: 'Reset Break', vocab: 'Vocabulary Builder', list: 'Word List Practice',
 };
 
 function stepInfo(key) {
@@ -484,8 +505,10 @@ async function gatherOnlineWords(level, p, wantVocab) {
   return { levelWords, vocab };
 }
 
-async function startLesson(levelId) {
+async function startLesson(levelId, opts = {}) {
   const p = activeProfile();
+  const list = readerList(p);
+  const listOnly = !!opts.listOnly && !!list;
   const level = READING_LEVELS.find(l => l.id === levelId);
   const quick = p.settings.quick;
   const cfg = gradeCfg(p);
@@ -496,15 +519,18 @@ async function startLesson(levelId) {
     ? ['sounds', 'blend', 'heart', 'story']
     : ['sounds', 'blend', 'spell', 'heart', 'sentences', ...(hasVocab ? ['vocab'] : []), 'story'];
   if (p.settings.breaks) steps.splice(quick ? 2 : 3, 0, 'break');
+  // The grown-up's word list gets its own step, just before the story
+  if (list) steps.splice(steps.indexOf('story'), 0, 'list');
+  if (listOnly) steps = ['list'];
 
-  $('#lessonTitle').textContent = `${level.icon} Level ${level.id}: ${level.title}`;
+  $('#lessonTitle').textContent = listOnly ? `📝 ${list.name}` : `${level.icon} Level ${level.id}: ${level.title}`;
   $('#lessonStars').textContent = '0';
   $('#stepDots').innerHTML = '';
-  if (p.settings.online) {
+  if (p.settings.online && !listOnly) {
     $('#activity').innerHTML = '<div class="act-card loading-card">🌐 Getting fresh words for today…</div>';
   }
   showScreen('lessonScreen');
-  const online = await gatherOnlineWords(level, p, !quick && hasVocab);
+  const online = listOnly ? { levelWords: [], vocab: [] } : await gatherOnlineWords(level, p, !quick && hasVocab);
   if (!$('#lessonScreen').classList.contains('active')) return;   // they left while we waited
   const onlineLevel = online.levelWords.map(w => ({ level: level.id, word: w.word, emoji: null, parts: w.parts, isWeb: true }));
 
@@ -512,6 +538,7 @@ async function startLesson(levelId) {
     level, steps, stepIndex: 0, quick, cfg, older,
     story: older && level.storyOlder ? level.storyOlder : level.story,
     vocabResults: [], fluency: null,
+    list, listOnly, listResults: [],
     onlineLevel: shuffle(onlineLevel), onlineVocab: online.vocab,
     onlineByWord: Object.fromEntries(onlineLevel.map(w => [w.word, w])),
     correct: 0, total: 0, stars: 0,
@@ -531,7 +558,7 @@ function runStep() {
   if (L.stepIndex >= L.steps.length) { finishLesson(); return; }
   const step = L.steps[L.stepIndex];
   ({ sounds: stepSounds, blend: stepBlend, spell: stepSpell, heart: stepHeart,
-     sentences: stepSentences, story: stepStory, break: stepBreak, vocab: stepVocab })[step]();
+     sentences: stepSentences, story: stepStory, break: stepBreak, vocab: stepVocab, list: stepList })[step]();
   $('#activity').focus?.();
 }
 
@@ -1094,6 +1121,113 @@ function stepVocab() {
   show();
 }
 
+/* ---------- STEP: My Word List (the grown-up's own words) ----------
+   Read the word aloud and check by listening, then spell it from letter tiles.
+   Words not yet mastered come up first. */
+function stepList() {
+  const L = lesson;
+  const p = activeProfile();
+  const prog = p.listProgress[L.list.id] || {};
+  const count = L.listOnly ? Math.min(L.list.words.length, L.quick ? 6 : 10) : (L.quick ? 3 : 5);
+  const words = shuffle([...L.list.words])
+    .sort((a, b) => (prog[listKey(a.word)] ?? -1) - (prog[listKey(b.word)] ?? -1))
+    .slice(0, count);
+  let i = 0;
+
+  activityShell('list',
+    'These are your own practice words. Read each word out loud, check yourself, then spell it.',
+    '<div id="listArea"></div>');
+
+  function show() {
+    if (i >= words.length) { L.next(); return; }
+    const w = words[i];
+    let readOk = false;
+    $('#listArea').innerHTML = `
+      <div class="counter">${i + 1} / ${words.length}</div>
+      <div class="list-word tinted" id="listWord">${esc(w.word)}</div>
+      ${w.definition ? `<p class="list-meaning">💡 ${esc(w.definition)}</p>` : ''}
+      <div class="row-btns" id="listRead"><button class="btn-primary" id="listCheck">🔊 Check my reading</button></div>
+      <div id="listSpell"></div>
+      <div class="feedback-box" id="listFb"></div>`;
+
+    $('#listCheck').addEventListener('click', () => {
+      speak(w.word);
+      $('#listRead').innerHTML = `
+        <button class="btn-primary" id="listReadOk">✅ I read it right</button>
+        <button class="btn-secondary" id="listReadAgain">🔁 I need more practice</button>`;
+      $('#listReadOk').addEventListener('click', () => { readOk = true; score(true); spellIt(); });
+      $('#listReadAgain').addEventListener('click', () => { score(false); speak(w.word, { rate: 0.5 }); spellIt(); });
+    });
+
+    function spellIt() {
+      $('#listRead').remove();
+      $('#listWord').classList.add('hidden-word');
+      const target = w.word.toLowerCase().split('');
+      const extras = shuffle('abcdefghijklmnopqrstuvwxyz'.split('').filter(c => !target.includes(c)))
+        .slice(0, Math.min(4, Math.max(2, Math.ceil(target.length / 3))));
+      const bank = shuffle([...target, ...extras]);
+      let built = [];
+      let tries = 0;
+      $('#listSpell').innerHTML = `
+        <p class="find-q">Now spell it! <button class="inline-say" id="listHear">🔊 Hear it</button></p>
+        <div class="spell-slots" id="listSlots">${target.map(() => '<span class="slot"></span>').join('')}</div>
+        <div class="tile-bank" id="listBank">${bank.map((t, k) =>
+          `<button class="tile" data-k="${k}" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+        <div class="row-btns">
+          <button class="btn-outline" id="listUndo">↩ Undo</button>
+          <button class="btn-primary" id="listSpellCheck">✔ Check</button>
+        </div>`;
+      $('#listHear').addEventListener('click', () => speak(w.word));
+      speak(`Now spell ${w.word}`, { queue: true });
+
+      const paint = () => $$('#listSlots .slot').forEach((slot, k) => {
+        slot.textContent = built[k]?.dataset.t || '';
+        slot.classList.toggle('filled', !!built[k]);
+      });
+      $$('#listBank .tile').forEach(tile => tile.addEventListener('click', () => {
+        if (built.length >= target.length) return;
+        built.push(tile);
+        tile.disabled = true;
+        paint();
+      }));
+      $('#listUndo').addEventListener('click', () => {
+        const last = built.pop();
+        if (last) last.disabled = false;
+        paint();
+      });
+      $('#listSpellCheck').addEventListener('click', () => {
+        tries++;
+        const right = built.map(t => t.dataset.t).join('') === target.join('');
+        if (!right && tries < 3) {
+          let keep = 0;
+          while (keep < built.length && built[keep].dataset.t === target[keep]) keep++;
+          built.slice(keep).forEach(t => { t.disabled = false; });
+          built = built.slice(0, keep);
+          paint();
+          $('#listFb').innerHTML = `<span class="feedback-text wrong">${retry()}${keep ? ` The first ${keep} letter${keep === 1 ? ' is' : 's are'} right.` : ''}</span>`;
+          speak(w.word, { rate: 0.5 });
+          return;
+        }
+        const spellOk = right && tries === 1;
+        score(spellOk);
+        L.listResults.push({ word: w.word, ok: readOk && spellOk });
+        $('#listWord').classList.remove('hidden-word');
+        $('#listSpellCheck').disabled = true;
+        $('#listUndo').disabled = true;
+        if (right) $('#listSlots').classList.add('solved');
+        $('#listFb').innerHTML = `<span class="feedback-text ${right ? 'correct' : 'wrong'}">${right
+          ? `🎉 ${esc(w.word)}! ${praise()}`
+          : `It's spelled <b>${esc(w.word)}</b>. We'll practice it again soon.`}</span>
+          <button class="next-btn" id="nextList">Next →</button>`;
+        speak(right ? w.word : `${w.word}. ${target.join(', ')}. ${w.word}.`);
+        $('#nextList').addEventListener('click', () => { i++; show(); });
+        $('#nextList').focus();
+      });
+    }
+  }
+  show();
+}
+
 /* ---------- STEP: Brain Break ---------- */
 function stepBreak() {
   const L = lesson;
@@ -1121,13 +1255,22 @@ function finishLesson() {
   const p = activeProfile();
   const acc = L.total ? L.correct / L.total : 1;
   const mins = Math.max(1, Math.round((Date.now() - L.started) / 60000));
-  const rec = p.levels[L.level.id] || { best: 0, attempts: 0, mastered: false };
-  rec.attempts++;
-  rec.best = Math.max(rec.best, acc);
-  const justMastered = !rec.mastered && acc >= MASTERY;
-  if (acc >= MASTERY) rec.mastered = true;
-  p.levels[L.level.id] = rec;
-  if (rec.mastered && L.level.id === p.unlocked && p.unlocked < READING_LEVELS.length) p.unlocked++;
+  let justMastered = false;
+  if (!L.listOnly) {
+    const rec = p.levels[L.level.id] || { best: 0, attempts: 0, mastered: false };
+    rec.attempts++;
+    rec.best = Math.max(rec.best, acc);
+    justMastered = !rec.mastered && acc >= MASTERY;
+    if (acc >= MASTERY) rec.mastered = true;
+    p.levels[L.level.id] = rec;
+    if (rec.mastered && L.level.id === p.unlocked && p.unlocked < READING_LEVELS.length) p.unlocked++;
+  }
+
+  // A list word counts as mastered after being read AND spelled right twice in a row
+  if (L.list) {
+    const prog = p.listProgress[L.list.id] ??= {};
+    for (const r of L.listResults) prog[listKey(r.word)] = r.ok ? (prog[listKey(r.word)] ?? 0) + 1 : 0;
+  }
 
   // Spaced review: missed words enter the deck; reviewed words move up or reset
   for (const r of L.reviewed) {
@@ -1154,13 +1297,18 @@ function finishLesson() {
   p.stars += L.stars + (justMastered ? 5 : 0);
   p.minutes += mins;
   if (!p.days.includes(today())) p.days.push(today());
-  p.log.unshift({ date: today(), level: L.level.id, acc: Math.round(acc * 100), mins });
+  p.log.unshift({ date: today(), level: L.level.id, acc: Math.round(acc * 100), mins, ...(L.listOnly ? { list: L.list.name } : {}) });
   p.log = p.log.slice(0, 30);
   saveStore();
 
   const pct = Math.round(acc * 100);
   let title, msg;
-  if (justMastered) {
+  if (L.listOnly) {
+    const mastered = listMastered(p, L.list);
+    title = acc >= MASTERY ? '🌟 Great Word Practice!' : '💪 Good Practice!';
+    msg = `${pct}% right on your own. ${mastered} of ${L.list.words.length} words on your list are mastered.`;
+    if (acc >= MASTERY) launchConfetti();
+  } else if (justMastered) {
     title = '🏅 Level Mastered!';
     msg = `${pct}% on your own — you unlocked the next level and earned 5 bonus stars!`;
     launchConfetti();
@@ -1193,7 +1341,7 @@ function finishLesson() {
     </div>`;
   speak(`${title.replace(/[^\w\s!]/g, '')} ${msg}`);
   $('#toMap').addEventListener('click', renderMap);
-  $('#again').addEventListener('click', () => startLesson(L.level.id));
+  $('#again').addEventListener('click', () => startLesson(L.level.id, { listOnly: L.listOnly }));
 }
 
 /* ===================================================================
@@ -1231,7 +1379,15 @@ function renderParent() {
           ${solo.length > 1 ? `Change since first timed read: <b>${latest.wpm - solo[0].wpm >= 0 ? '+' : ''}${latest.wpm - solo[0].wpm} wpm</b>.` : ''}
           Kids with learning differences often read below the typical rate — steady growth is the goal.</p>`;
     const recent = p.log.slice(0, 5).map(e =>
-      `<li>${e.date} · Level ${e.level} · ${e.acc}% · ${e.mins} min</li>`).join('') || '<li>No lessons yet.</li>';
+      `<li>${e.date} · ${e.list ? `📝 ${esc(e.list)}` : `Level ${e.level}`} · ${e.acc}% · ${e.mins} min</li>`).join('') || '<li>No lessons yet.</li>';
+    const lists = typeof WordLists !== 'undefined' ? WordLists.all() : [];
+    const myList = readerList(p);
+    const prog = myList ? (p.listProgress[myList.id] || {}) : {};
+    const practicing = myList ? myList.words.filter(w => prog[listKey(w.word)] === 0).map(w => w.word) : [];
+    const listHtml = myList
+      ? `<p><b>${esc(myList.name)}</b>: ${listMastered(p, myList)} of ${myList.words.length} words mastered (read and spelled right twice in a row).</p>
+         ${practicing.length ? `<p class="fine">Still practicing: ${practicing.map(esc).join(', ')}</p>` : ''}`
+      : `<p class="fine">${lists.length ? 'Pick a list below to add it to every lesson.' : 'Make a list in "📝 Word lists" below, then pick it here.'}</p>`;
     return `
       <section class="parent-card">
         <header><span class="pf-avatar">${p.avatar}</span><h3>${esc(p.name)}</h3>
@@ -1253,11 +1409,19 @@ function renderParent() {
         ${fluencyHtml}
         ${gradeList.length && cfg.vocab ? `<h4>${cfg.label} vocabulary</h4>
         <p>${vocabKnown} of ${gradeList.length} words known (right twice in a row) · ${vocabSeen} practiced so far</p>` : ''}
+        <h4>📝 Word list practice</h4>
+        ${listHtml}
         <h4>Words to review</h4>
         <p>${review.length ? review.map(esc).join(', ') : 'None — great job! 🎉'}</p>
         <h4>Recent lessons</h4>
         <ul class="recent">${recent}</ul>
         <div class="row-btns">
+          <label class="place-label">Word list
+            <select data-list="${p.id}">
+              <option value="">None</option>
+              ${lists.map(l => `<option value="${l.id}" ${l.id === p.listId ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}
+            </select>
+          </label>
           <label class="place-label">Starting level
             <select data-place="${p.id}">${READING_LEVELS.map(l =>
               `<option value="${l.id}" ${l.id === p.unlocked ? 'selected' : ''}>Level ${l.id}: ${l.title}</option>`).join('')}
@@ -1271,6 +1435,11 @@ function renderParent() {
 
   $('#parentBody').innerHTML = `
     ${cards}
+    <section class="parent-card">
+      <h3>📝 Word lists</h3>
+      <p class="fine">Add your child's own words — like this week's spelling list. Lists are saved on this device and work in SpellingHive games too. Pick a list for each reader above.</p>
+      <div id="rbListEditor"></div>
+    </section>
     <section class="parent-card tips">
       <h3>💡 How to get the fastest results</h3>
       <ul>
@@ -1281,6 +1450,7 @@ function renderParent() {
         <li><b>Praise effort, not speed.</b> Say "You kept trying on that hard word!" instead of "You're so smart."</li>
         <li><b>Placement:</b> Run the 2-minute placement check, or pick a starting level above. If accuracy stays below 60%, move back one level.</li>
         <li><b>Fresh words:</b> With "Add fresh words from the internet" on, each lesson mixes in a few new words from online dictionaries (or made by Claude when the page can't reach them). They're checked to use only sounds your child has learned. They have no pictures, so your child reads them aloud and checks by listening — a great moment to listen in.</li>
+        <li><b>Your own word lists:</b> Add spelling or sight words in "📝 Word lists", then pick a list for each reader. Every lesson adds a short "My Word List" step (read it, check by listening, then spell it), and "Practice my word list" on the path runs just those words.</li>
         <li><b>Grade setting:</b> It doesn't lock your child into grade-level material. It sets the target level, lesson length, grade vocabulary, the reading-speed goal, and a more grown-up tone for Grades 3–8 — while lessons still meet them at their real skill level.</li>
       </ul>
       <h3>🧠 Helpers for different learners</h3>
@@ -1299,6 +1469,13 @@ function renderParent() {
     store.profiles[sel.dataset.place].unlocked = +sel.value;
     saveStore();
     showToast('Starting level updated ✔', 'correct');
+  }));
+  if (typeof WordLists !== 'undefined') WordLists.mountEditor($('#rbListEditor'), { onChange: renderParent });
+  $$('[data-list]').forEach(sel => sel.addEventListener('change', () => {
+    store.profiles[sel.dataset.list].listId = sel.value || null;
+    saveStore();
+    renderParent();
+    showToast(sel.value ? 'Word list added to lessons ✔' : 'Word list removed', 'correct');
   }));
   $$('[data-grade]').forEach(sel => sel.addEventListener('change', () => {
     store.profiles[sel.dataset.grade].grade = sel.value;

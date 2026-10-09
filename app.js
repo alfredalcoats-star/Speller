@@ -11,6 +11,7 @@ const state = {
   total: 0,
   round: 0,
   online: {},          // grade -> fresh words fetched from the internet
+  currentList: null,   // id of a grown-up's word list being played (instead of a grade)
   matchState: {
     selectedWord: null,
     selectedDef:  null,
@@ -25,7 +26,7 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 
-  const viewMap = { homeScreen: 'home', gamesScreen: 'games', practiceScreen: 'practice' };
+  const viewMap = { homeScreen: 'home', gamesScreen: 'games', practiceScreen: 'practice', listsScreen: 'lists' };
   document.querySelectorAll('.nav-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.view === viewMap[id]);
   });
@@ -36,6 +37,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.dataset.view === 'home')  showScreen('homeScreen');
     if (btn.dataset.view === 'games') showScreen('gamesScreen');
+    if (btn.dataset.view === 'lists') openListsScreen();
   });
 });
 
@@ -45,6 +47,7 @@ document.getElementById('logoHome').addEventListener('click', (e) => {
 });
 
 document.getElementById('backFromGames').addEventListener('click', () => showScreen('homeScreen'));
+document.getElementById('backFromLists').addEventListener('click', () => { renderHomeLists(); showScreen('homeScreen'); });
 document.getElementById('backFromPractice').addEventListener('click', () => showScreen('gamesScreen'));
 
 /* ===================================================================
@@ -100,6 +103,8 @@ document.querySelectorAll('.grade-card').forEach(card => {
   card.addEventListener('click', () => {
     const grade = card.dataset.grade;
     state.currentGrade = grade;
+    state.currentList = null;
+    setGameAvailability(null);
     fetchOnlineWords(grade);
     const label = grade === 'K' ? 'Kindergarten' : `Grade ${grade}`;
     document.getElementById('gradeTitle').textContent = `${label} — Choose a Game`;
@@ -109,19 +114,104 @@ document.querySelectorAll('.grade-card').forEach(card => {
   });
 });
 
+/* ===================================================================
+   GROWN-UPS' WORD LISTS
+   A list can be played like a grade. Each game uses the words it can:
+   Spell It works with plain words; matching and meaning games need meanings,
+   Missing Words needs sentences.
+   =================================================================== */
+const GAME_NEEDS = {
+  match:   { min: 3, ok: w => !!w.definition,      need: 'meanings' },
+  context: { min: 3, ok: w => !!w.contextChoices && !!w.contextSentence, need: 'meanings and sentences' },
+  missing: { min: 2, ok: w => !!w.sentence,        need: 'sentences' },
+  spell:   { min: 1, ok: () => true,               need: 'words' },
+};
+
+function listEntries(list) {
+  const builtInDefs = Object.values(GRADE_WORDS).flat().map(w => w.definition);
+  return WordLists.toGameEntries(list, builtInDefs);
+}
+
+function renderHomeLists() {
+  const wrap = document.getElementById('homeLists');
+  const lists = WordLists.all();
+  wrap.innerHTML = lists.map(l => {
+    const c = WordLists.counts(l);
+    return `<button class="grade-card gc-teal list-card" data-list="${l.id}">
+      <div class="gc-icon">📝</div>
+      <div class="gc-name">${escapeHtml(l.name)}</div>
+      <div class="gc-desc">${c.words} word${c.words === 1 ? '' : 's'}</div>
+      <div class="gc-arrow">→</div>
+    </button>`;
+  }).join('') + `
+    <button class="grade-card gc-navy list-card add-list-card" id="addListCard">
+      <div class="gc-icon">➕</div>
+      <div class="gc-name">${lists.length ? 'Add or edit lists' : 'Make a word list'}</div>
+      <div class="gc-desc">For grown-ups</div>
+      <div class="gc-arrow">→</div>
+    </button>`;
+  wrap.querySelectorAll('[data-list]').forEach(b => b.addEventListener('click', () => selectList(b.dataset.list)));
+  document.getElementById('addListCard').addEventListener('click', openListsScreen);
+}
+
+function openListsScreen() {
+  WordLists.mountEditor(document.getElementById('listEditor'), { onChange: renderHomeLists });
+  showScreen('listsScreen');
+}
+
+function selectList(id) {
+  const list = WordLists.get(id);
+  if (!list) { renderHomeLists(); return; }
+  state.currentList = id;
+  state.currentGrade = null;
+  document.getElementById('gradeTitle').textContent = `${list.name} — Choose a Game`;
+  document.querySelector('#gamesScreen .screen-sub').textContent =
+    `Your ${list.words.length} words are loaded! Pick your game.`;
+  setGameAvailability(listEntries(list));
+  showScreen('gamesScreen');
+}
+
+/* Grey out games a list doesn't have enough meanings or sentences for */
+function setGameAvailability(entries) {
+  document.querySelector('.online-bar').style.display = entries ? 'none' : '';
+  document.querySelectorAll('.game-sel-card').forEach(card => {
+    const need = GAME_NEEDS[card.dataset.game];
+    const enough = !entries || entries.filter(need.ok).length >= need.min;
+    card.classList.toggle('gsc-disabled', !enough);
+    card.querySelector('.gsc-note')?.remove();
+    if (!enough) {
+      card.insertAdjacentHTML('beforeend',
+        `<div class="gsc-note">Needs ${need.min}+ words with ${need.need} — add them in 📝 My Lists</div>`);
+    }
+  });
+}
+
+/* The words for one round of a game, from a grade or a grown-up's list */
+function wordsForGame(game) {
+  if (state.currentList) {
+    const list = WordLists.get(state.currentList);
+    const entries = list ? listEntries(list) : [];
+    state.distractorPool = entries.map(e => e.word);
+    return shuffle(entries.filter(GAME_NEEDS[game].ok)).slice(0, 8);
+  }
+  state.distractorPool = null;
+  return buildWordSet(state.currentGrade);
+}
+
 /* ===== GAME CARDS ===== */
 document.querySelectorAll('.game-sel-card').forEach(card => {
   card.addEventListener('click', () => {
-    if (!state.currentGrade) { showToast('Pick a grade first! 📚'); showScreen('homeScreen'); return; }
+    if (!state.currentGrade && !state.currentList) { showToast('Pick a grade or a word list first! 📚'); showScreen('homeScreen'); return; }
+    if (card.classList.contains('gsc-disabled')) { showToast('This list needs more meanings or sentences for that game.'); return; }
     state.currentGame = card.dataset.game;
-    state.words = buildWordSet(state.currentGrade);
+    state.words = wordsForGame(card.dataset.game);
     startGame(card.dataset.game);
   });
 });
 
 /* ===== RESULT BUTTONS ===== */
 document.getElementById('playAgainBtn').addEventListener('click', () => {
-  state.words = buildWordSet(state.currentGrade);
+  state.words = wordsForGame(state.currentGame);
   startGame(state.currentGame);
 });
 document.getElementById('chooseGameBtn').addEventListener('click', () => showScreen('gamesScreen'));
@@ -135,7 +225,7 @@ function startGame(game) {
   state.round = 0;
   state.total = state.words.length;
 
-  const gameLabel = { match: '🔗 Word Match', context: '🔍 Context Clues', missing: '✏️ Missing Words' };
+  const gameLabel = { match: '🔗 Word Match', context: '🔍 Context Clues', missing: '✏️ Missing Words', spell: '🎧 Spell It' };
   document.getElementById('gameTitle').textContent = gameLabel[game] || game;
 
   updateScoreDisplay();
@@ -152,6 +242,7 @@ function startGame(game) {
   if (game === 'match')   buildMatchGame();
   if (game === 'context') buildContextRound();
   if (game === 'missing') buildMissingRound();
+  if (game === 'spell')   buildSpellRound();
 }
 
 /* ===================================================================
@@ -452,9 +543,133 @@ function handleMissingChoice(e) {
 }
 
 function getDistractors(words, currentIdx, count) {
-  const pool    = words.filter((_, i) => i !== currentIdx).map(w => w.word);
-  return shuffle(pool).slice(0, count);
+  // Lists can be short, so draw from the whole list (and built-in words as a last resort)
+  const answer = words[currentIdx].word;
+  let pool = (state.distractorPool || words.map(w => w.word)).filter(w => w !== answer);
+  if (pool.length < count) {
+    pool = [...pool, ...shuffle(Object.values(GRADE_WORDS).flat().map(w => w.word))
+      .filter(w => w !== answer && !pool.includes(w))];
+  }
+  return shuffle([...new Set(pool)]).slice(0, count);
 }
+
+/* ===================================================================
+   SPELL IT GAME — hear the word, build it from letter tiles
+   Works with any word, so it's the go-to game for weekly spelling lists.
+   =================================================================== */
+function speakText(text, rate = 0.8) {
+  if (!window.speechSynthesis || !text) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = rate;
+  speechSynthesis.speak(u);
+}
+
+function buildSpellRound() {
+  if (state.round >= state.words.length) { showResult(); return; }
+  const w = state.words[state.round];
+  setProgress(state.round / state.words.length);
+
+  const target = w.word.toLowerCase().split('');
+  const extraCount = Math.min(4, Math.max(2, Math.ceil(target.length / 3)));
+  const extras = shuffle('abcdefghijklmnopqrstuvwxyz'.split('').filter(c => !target.includes(c))).slice(0, extraCount);
+  const bank = shuffle([...target, ...extras]);
+  state.spell = { target, built: [], tries: 0, done: false };
+
+  document.getElementById('gameArea').innerHTML = `
+    <div class="missing-card spell-card">
+      <div class="round-label">🎧 Round ${state.round + 1} of ${state.words.length}${w.source ? ' · 🌐 fresh word' : ''}</div>
+      <div class="spell-listen">
+        <button class="spell-hear" id="spellHear">🔊 Hear the word</button>
+        ${w.contextSentence ? '<button class="spell-hint" id="spellSentence">💬 Hear it in a sentence</button>' : ''}
+      </div>
+      ${w.definition ? `<p class="spell-meaning">💡 ${w.definition}</p>` : ''}
+      <div class="spell-slots" id="spellSlots">${target.map(() => '<span class="spell-slot"></span>').join('')}</div>
+      <div class="spell-bank" id="spellBank">${bank.map((t, k) =>
+        `<button class="spell-tile" data-k="${k}" data-t="${t}">${t}</button>`).join('')}</div>
+      <div class="spell-actions">
+        <button class="btn-outline" id="spellUndo">⌫ Undo</button>
+        <button class="btn-primary" id="spellCheck">✔ Check</button>
+      </div>
+      <div class="feedback-box" id="spFeedback"></div>
+    </div>`;
+
+  const hear = () => speakText(w.word);
+  document.getElementById('spellHear').addEventListener('click', hear);
+  document.getElementById('spellSentence')?.addEventListener('click', () => speakText(w.contextSentence));
+  document.querySelectorAll('.spell-tile').forEach(t => t.addEventListener('click', () => addSpellTile(t)));
+  document.getElementById('spellUndo').addEventListener('click', undoSpellTile);
+  document.getElementById('spellCheck').addEventListener('click', checkSpelling);
+  setTimeout(hear, 300);
+}
+
+function paintSpellSlots() {
+  document.querySelectorAll('#spellSlots .spell-slot').forEach((s, k) => {
+    s.textContent = state.spell.built[k]?.dataset.t || '';
+    s.classList.toggle('filled', !!state.spell.built[k]);
+  });
+}
+function addSpellTile(tile) {
+  const sp = state.spell;
+  if (sp.done || tile.disabled || sp.built.length >= sp.target.length) return;
+  sp.built.push(tile);
+  tile.disabled = true;
+  paintSpellSlots();
+}
+function undoSpellTile() {
+  const sp = state.spell;
+  if (sp.done) return;
+  const last = sp.built.pop();
+  if (last) last.disabled = false;
+  paintSpellSlots();
+}
+
+function checkSpelling() {
+  const sp = state.spell;
+  if (sp.done) return;
+  const w = state.words[state.round];
+  const attempt = sp.built.map(t => t.dataset.t).join('');
+  const fb = document.getElementById('spFeedback');
+  sp.tries++;
+  if (attempt === sp.target.join('')) {
+    sp.done = true;
+    if (sp.tries === 1) { state.score++; updateScoreDisplay(); showToast(`✅ "${w.word}" is right!`, 'correct'); }
+    document.getElementById('spellSlots').classList.add('solved');
+    fb.innerHTML = `<span class="feedback-text correct">🎉 ${sp.tries === 1 ? 'Perfect spelling!' : 'You got it!'} "${w.word}"</span>`;
+    speakText(w.word);
+  } else if (sp.tries >= 3) {
+    sp.done = true;
+    fb.innerHTML = `<span class="feedback-text wrong">The word is spelled <b>${w.word}</b>. Let's practice it again soon!</span>`;
+    speakText(`${w.word}. ${sp.target.join(', ')}. ${w.word}.`, 0.7);
+  } else {
+    // Keep the correct start of the word, give the rest back — shows exactly what to fix
+    let keep = 0;
+    while (keep < sp.built.length && sp.built[keep].dataset.t === sp.target[keep]) keep++;
+    sp.built.slice(keep).forEach(t => { t.disabled = false; });
+    sp.built = sp.built.slice(0, keep);
+    paintSpellSlots();
+    fb.innerHTML = `<span class="feedback-text wrong">Almost! ${keep ? `The first ${keep} letter${keep === 1 ? ' is' : 's are'} right. ` : ''}Listen again and try.</span>`;
+    speakText(w.word, 0.55);
+    return;
+  }
+  setProgress((state.round + 1) / state.words.length);
+  state.round++;
+  const isLast = state.round >= state.words.length;
+  fb.innerHTML += `<button class="next-btn" id="nextSpBtn">${isLast ? '🏆 See Results' : 'Next Word →'}</button>`;
+  document.getElementById('nextSpBtn').addEventListener('click', buildSpellRound);
+  document.getElementById('nextSpBtn').focus();
+}
+
+/* Typing works too: letter keys pick a tile, Backspace undoes, Enter checks */
+document.addEventListener('keydown', e => {
+  if (!document.querySelector('.spell-card') || !document.getElementById('practiceScreen').classList.contains('active')) return;
+  if (e.ctrlKey || e.metaKey || e.altKey || state.spell?.done) return;
+  if (e.key === 'Backspace') { e.preventDefault(); undoSpellTile(); return; }
+  if (e.key === 'Enter') { e.preventDefault(); checkSpelling(); return; }
+  const tile = /^[a-z]$/i.test(e.key) &&
+    document.querySelector(`#spellBank .spell-tile[data-t="${e.key.toLowerCase()}"]:not(:disabled)`);
+  if (tile) addSpellTile(tile);
+});
 
 /* ===================================================================
    RESULTS
@@ -495,9 +710,14 @@ function showResult() {
 /* ===================================================================
    HELPERS
    =================================================================== */
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /* ===== INIT ===== */
+renderHomeLists();
 showScreen('homeScreen');

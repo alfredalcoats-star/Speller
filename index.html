@@ -86,6 +86,7 @@
     <nav class="top-nav" role="navigation" aria-label="Main navigation">
       <button class="nav-btn active" data-view="home">🏠 Home</button>
       <button class="nav-btn" data-view="games">🎮 Games</button>
+      <button class="nav-btn" data-view="lists">📝 My Lists</button>
       <a class="nav-btn" href="reading.html" style="text-decoration:none">📖 Reading Boost</a>
     </nav>
   </div>
@@ -102,7 +103,7 @@
       <p class="hero-sub">Play word games, match definitions, find context clues, and fill in the blanks. Learning has never been sweeter!</p>
       <div class="hero-stats">
         <div class="stat-chip">📚 9 Grade Levels</div>
-        <div class="stat-chip">🎮 3 Game Types</div>
+        <div class="stat-chip">🎮 4 Game Types</div>
         <div class="stat-chip">🏆 Earn Stars</div>
       </div>
     </div>
@@ -149,7 +150,7 @@
 
   <!-- Game Types Preview -->
   <section class="games-preview-section">
-    <h3 class="section-heading">🎮 Three Ways to Play</h3>
+    <h3 class="section-heading">🎮 Four Ways to Play</h3>
     <div class="games-preview-grid">
       <div class="preview-card pc-blue">
         <div class="pc-icon">🔗</div>
@@ -168,6 +169,12 @@
         <h4>Missing Words</h4>
         <p>Find the perfect word to complete each sentence!</p>
         <div class="pc-tag">Fill in the Blank</div>
+      </div>
+      <div class="preview-card pc-orange">
+        <div class="pc-icon">🎧</div>
+        <h4>Spell It</h4>
+        <p>Listen to the word, then build it with letter tiles!</p>
+        <div class="pc-tag">Spelling</div>
       </div>
     </div>
   </section>
@@ -234,6 +241,13 @@
         <div class="gc-arrow">→</div>
       </button>
     </div>
+  </section>
+
+  <!-- Grown-ups' own word lists -->
+  <section class="grade-section mylists-section">
+    <h3 class="section-heading">📝 My Word Lists</h3>
+    <p class="section-sub">Practice your own words — like this week's spelling list from school!</p>
+    <div class="grade-grid" id="homeLists"></div>
   </section>
 
   <!-- How It Works -->
@@ -324,7 +338,35 @@
         </div>
         <div class="gsc-play-btn">Play Now →</div>
       </button>
+
+      <button class="game-sel-card gsc-orange" data-game="spell">
+        <div class="gsc-header">
+          <div class="gsc-icon">🎧</div>
+          <div class="gsc-badge">Spelling</div>
+        </div>
+        <h3>Spell It</h3>
+        <p>Listen to the word, then tap the letters to spell it. You can type, too!</p>
+        <div class="gsc-info">
+          <span>⏱ ~4 min</span>
+          <span>📋 8 Words</span>
+        </div>
+        <div class="gsc-play-btn">Play Now →</div>
+      </button>
     </div>
+  </div>
+</main>
+
+<!-- ===== MY WORD LISTS (grown-ups) ===== -->
+<main id="listsScreen" class="screen">
+  <div class="inner-wrap">
+    <div class="screen-topbar">
+      <button class="back-btn" id="backFromLists">
+        <span class="back-arrow">←</span> Back
+      </button>
+      <h2 class="screen-title">📝 My Word Lists</h2>
+    </div>
+    <p class="screen-sub">Grown-ups: add your child's words here. Lists are saved on this device and also show up in Reading Boost.</p>
+    <div id="listEditor" class="list-editor-card"></div>
   </div>
 </main>
 
@@ -409,7 +451,7 @@
     <div class="footer-links">
       <span>Grades K–8</span>
       <span>•</span>
-      <span>3 Game Types</span>
+      <span>4 Game Types</span>
       <span>•</span>
       <span>Free Forever</span>
     </div>
@@ -418,6 +460,7 @@
 
 <script src="words-data.js"></script>
 <script src="online-words.js"></script>
+<script src="word-lists.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

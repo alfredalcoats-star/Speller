@@ -485,3 +485,13 @@ body.rb-band-teen .result-stars { display: none; }
 
 /* ===== FRESH INTERNET WORDS ===== */
 .loading-card { text-align: center; font-weight: 800; font-size: 1.2rem; color: var(--text-mid); padding: 48px 20px; }
+
+/* ===== MY WORD LIST STEP ===== */
+.list-word {
+  font-family: var(--read-font); letter-spacing: var(--read-letter);
+  font-size: calc(var(--read-size) * 1.9); font-weight: 700;
+  width: fit-content; min-width: 200px; margin: 0 auto 10px; padding: 18px 36px; text-align: center;
+}
+.list-word.hidden-word { color: transparent; }
+.list-meaning { text-align: center; font-weight: 700; color: var(--text-mid); font-family: var(--read-font); margin-bottom: 8px; }
+.list-go { margin-top: 10px; background: var(--white); }
