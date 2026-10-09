@@ -13,7 +13,7 @@ const AVATARS = ['🐝', '🦊', '🐼', '🦄', '🐸', '🦁', '🐙', '🐢',
 
 const DEFAULT_SETTINGS = {
   font: 'lexend', size: 'l', spacing: 'wide', tint: 'cream', rate: '0.8',
-  autoRead: true, ruler: true, breaks: true, calm: false, quick: false,
+  autoRead: true, ruler: true, breaks: true, calm: false, quick: false, online: true,
 };
 
 /* ===== PERSISTENCE ===== */
@@ -27,6 +27,7 @@ function loadStore() {
         p.grade ??= '1';
         p.vocab ??= {};
         p.fluency ??= [];
+        p.settings.online ??= true;
       }
       return data;
     }
@@ -470,7 +471,20 @@ function stepInfo(key) {
   return info;
 }
 
-function startLesson(levelId) {
+/* Fresh internet words for this lesson. Waits a few seconds at most; anything
+   slower is cached by OnlineWords and shows up in the next lesson. */
+async function gatherOnlineWords(level, p, wantVocab) {
+  if (!p.settings.online || typeof OnlineWords === 'undefined') return { levelWords: [], vocab: [] };
+  const known = READING_LEVELS.flatMap(l => [...l.words.map(w => w[0]), ...l.heartWords]);
+  const gradeList = wantVocab ? GRADE_WORDS[gradeOf(p)].map(w => w.word) : [];
+  const [levelWords, vocab] = await Promise.all([
+    OnlineWords.within(OnlineWords.levelWords(level, known), 3500),
+    wantVocab ? OnlineWords.within(OnlineWords.gradeWords(gradeOf(p), gradeList), 3500) : [],
+  ]);
+  return { levelWords, vocab };
+}
+
+async function startLesson(levelId) {
   const p = activeProfile();
   const level = READING_LEVELS.find(l => l.id === levelId);
   const quick = p.settings.quick;
@@ -483,18 +497,28 @@ function startLesson(levelId) {
     : ['sounds', 'blend', 'spell', 'heart', 'sentences', ...(hasVocab ? ['vocab'] : []), 'story'];
   if (p.settings.breaks) steps.splice(quick ? 2 : 3, 0, 'break');
 
+  $('#lessonTitle').textContent = `${level.icon} Level ${level.id}: ${level.title}`;
+  $('#lessonStars').textContent = '0';
+  $('#stepDots').innerHTML = '';
+  if (p.settings.online) {
+    $('#activity').innerHTML = '<div class="act-card loading-card">🌐 Getting fresh words for today…</div>';
+  }
+  showScreen('lessonScreen');
+  const online = await gatherOnlineWords(level, p, !quick && hasVocab);
+  if (!$('#lessonScreen').classList.contains('active')) return;   // they left while we waited
+  const onlineLevel = online.levelWords.map(w => ({ level: level.id, word: w.word, emoji: null, parts: w.parts, isWeb: true }));
+
   lesson = {
     level, steps, stepIndex: 0, quick, cfg, older,
     story: older && level.storyOlder ? level.storyOlder : level.story,
     vocabResults: [], fluency: null,
+    onlineLevel: shuffle(onlineLevel), onlineVocab: online.vocab,
+    onlineByWord: Object.fromEntries(onlineLevel.map(w => [w.word, w])),
     correct: 0, total: 0, stars: 0,
     missed: new Set(), reviewed: [],
     started: Date.now(),
     next() { this.stepIndex++; runStep(); },
   };
-  $('#lessonTitle').textContent = `${level.icon} Level ${level.id}: ${level.title}`;
-  $('#lessonStars').textContent = '0';
-  showScreen('lessonScreen');
   runStep();
 }
 
@@ -545,6 +569,10 @@ function findWord(word) {
     if (w) return { level: l.id, word: w[0], emoji: w[1], parts: w[2].split('|') };
   }
   return null;
+}
+function reviewWord(word, card) {
+  return findWord(word) ||
+    (card.parts ? { level: card.level, word, emoji: null, parts: card.parts, isWeb: true } : null);
 }
 const toWordObj = (w, level) => ({ level, word: w[0], emoji: w[1], parts: w[2].split('|') });
 
@@ -622,12 +650,17 @@ function stepBlend() {
   const L = lesson;
   const p = activeProfile();
   // Spaced review: missed words from earlier lessons come back first
-  const reviewWords = Object.keys(p.review)
-    .map(findWord).filter(w => w && w.level <= L.level.id)
+  const reviewWords = Object.entries(p.review)
+    .map(([word, card]) => reviewWord(word, card)).filter(w => w && w.level <= L.level.id)
     .slice(0, L.quick ? 1 : 3);
-  const fresh = shuffle(L.level.words.map(w => toWordObj(w, L.level.id)))
-    .filter(w => !reviewWords.some(r => r.word === w.word))
-    .slice(0, L.quick ? 4 : L.cfg.blend);
+  const total = L.quick ? 4 : L.cfg.blend;
+  const web = L.onlineLevel.filter(w => !reviewWords.some(r => r.word === w.word)).slice(0, L.quick ? 1 : 2);
+  const fresh = shuffle([
+    ...shuffle(L.level.words.map(w => toWordObj(w, L.level.id)))
+      .filter(w => !reviewWords.some(r => r.word === w.word))
+      .slice(0, total - web.length),
+    ...web,
+  ]);
   const items = [...reviewWords.map(w => ({ ...w, isReview: true })), ...fresh];
   const pool = READING_LEVELS.filter(l => l.id <= L.level.id).flatMap(l => l.words.map(w => toWordObj(w, l.id)));
   let i = 0;
@@ -640,17 +673,19 @@ function stepBlend() {
   function show() {
     if (i >= items.length) { L.next(); return; }
     const w = items[i];
-    const options = shuffle([w, ...shuffle(pool.filter(x => x.emoji !== w.emoji && x.word !== w.word)).slice(0, 2)]);
+    const options = w.emoji ? shuffle([w, ...shuffle(pool.filter(x => x.emoji !== w.emoji && x.word !== w.word)).slice(0, 2)]) : [];
     let firstTry = true;
 
     $('#blendArea').innerHTML = `
-      <div class="counter">${i + 1} / ${items.length}${w.isReview ? ' · 🔁 review word' : ''}</div>
+      <div class="counter">${i + 1} / ${items.length}${w.isReview ? ' · 🔁 review word' : ''}${w.isWeb ? ' · 🌐 fresh word' : ''}</div>
       <div class="sound-boxes" id="boxes">${soundBoxes(w.parts, READING_LEVELS[w.level - 1].chunks)}</div>
       <div class="row-btns">
         <button class="btn-secondary" id="slideBtn">👉 Slide it together</button>
       </div>
-      <div class="pic-choices">${options.map(o =>
-        `<button class="pic-btn" data-word="${o.word}" aria-label="picture option">${o.emoji}</button>`).join('')}</div>
+      ${w.emoji ? `<div class="pic-choices">${options.map(o =>
+        `<button class="pic-btn" data-word="${o.word}" aria-label="picture option">${o.emoji}</button>`).join('')}</div>`
+      : `<p class="find-q">Read it out loud, then check yourself.</p>
+         <div class="row-btns" id="selfCheck"><button class="btn-primary" id="checkRead">🔊 Check my reading</button></div>`}
       <div class="feedback-box" id="blendFb"></div>`;
 
     $$('#boxes .sbox').forEach(b => b.addEventListener('click', () => {
@@ -666,6 +701,26 @@ function stepBlend() {
       }
       $('#boxes').classList.add('blended');
       setTimeout(() => { $('#boxes')?.classList.remove('blended'); boxes.forEach(b => b.classList.remove('lit')); }, 1200);
+    });
+
+    // Words without a picture (fresh internet words): read aloud, listen, and self-check
+    $('#checkRead')?.addEventListener('click', () => {
+      speak(w.word);
+      $('#selfCheck').innerHTML = `
+        <button class="btn-primary" id="readRight">✅ I read it right</button>
+        <button class="btn-secondary" id="readAgain">🔁 I need more practice</button>`;
+      const finish = ok => {
+        score(ok, w.word);
+        if (w.isReview) lesson.reviewed.push({ word: w.word, ok });
+        $('#selfCheck').remove();
+        $('#blendFb').innerHTML = `<span class="feedback-text ${ok ? 'correct' : 'wrong'}">${
+          ok ? `🎉 ${esc(w.word)}! ${praise()}` : `We'll practice "${esc(w.word)}" again soon.`}</span>
+          <button class="next-btn" id="nextBlend">Next →</button>`;
+        $('#nextBlend').addEventListener('click', () => { i++; show(); });
+        $('#nextBlend').focus();
+      };
+      $('#readRight').addEventListener('click', () => finish(true));
+      $('#readAgain').addEventListener('click', () => { speak(w.word, { rate: 0.5 }); finish(false); });
     });
 
     $$('.pic-btn').forEach(btn => btn.addEventListener('click', () => {
@@ -696,8 +751,15 @@ function stepBlend() {
 /* ---------- STEP: Build the Word (encoding / spelling) ---------- */
 function stepSpell() {
   const L = lesson;
-  const items = shuffle(L.level.words.map(w => toWordObj(w, L.level.id))).slice(0, L.cfg.spell);
-  const allTiles = [...new Set(L.level.words.flatMap(w => spellTiles(w[2].split('|'))))];
+  const web = L.onlineLevel.slice(2, 4);   // different fresh words than the blend step used
+  const items = shuffle([
+    ...shuffle(L.level.words.map(w => toWordObj(w, L.level.id))).slice(0, L.cfg.spell - web.length),
+    ...web,
+  ]);
+  const allTiles = [...new Set([
+    ...L.level.words.flatMap(w => spellTiles(w[2].split('|'))),
+    ...web.flatMap(w => spellTiles(w.parts)),
+  ])];
   let i = 0;
 
   activityShell('spell', L.level.chunks
@@ -715,9 +777,9 @@ function stepSpell() {
     let firstTry = true;
 
     $('#spellArea').innerHTML = `
-      <div class="counter">${i + 1} / ${items.length}</div>
-      <button class="hear-word" id="hearWord" aria-label="Hear the word">
-        <span class="hw-emoji">${w.emoji}</span><span>🔊 Hear it</span>
+      <div class="counter">${i + 1} / ${items.length}${w.isWeb ? ' · 🌐 fresh word' : ''}</div>
+      <button class="hear-word" id="hearWord" aria-label="Hear the word" data-word="${esc(w.word)}">
+        <span class="hw-emoji">${w.emoji || '👂'}</span><span>🔊 Hear it</span>
       </button>
       <div class="spell-slots" id="slots">${target.map(() => '<span class="slot"></span>').join('')}</div>
       <div class="tile-bank" id="bank">${bank.map((t, k) =>
@@ -980,9 +1042,13 @@ function stepVocab() {
   const L = lesson;
   const p = activeProfile();
   // Words never seen come first, then the ones answered right the fewest times
-  const list = shuffle([...GRADE_WORDS[gradeOf(p)]])
-    .sort((a, b) => (p.vocab[a.word] ?? -1) - (p.vocab[b.word] ?? -1))
-    .slice(0, L.cfg.vocab);
+  const web = L.onlineVocab.slice(0, Math.floor(L.cfg.vocab / 2));
+  const list = shuffle([
+    ...shuffle([...GRADE_WORDS[gradeOf(p)]])
+      .sort((a, b) => (p.vocab[a.word] ?? -1) - (p.vocab[b.word] ?? -1))
+      .slice(0, L.cfg.vocab - web.length),
+    ...web,
+  ]);
   let i = 0;
 
   activityShell('vocab',
@@ -994,7 +1060,7 @@ function stepVocab() {
     const w = list[i];
     let firstTry = true;
     $('#vocabArea').innerHTML = `
-      <div class="counter">${i + 1} / ${list.length}</div>
+      <div class="counter">${i + 1} / ${list.length}${w.source ? ' · 🌐 fresh word' : ''}</div>
       <button class="vocab-word" id="vocabWord" aria-label="Hear ${esc(w.word)}">${esc(w.word)} <span>🔊</span></button>
       <div class="read-line tinted" id="vocabSent">${wordSpans(w.contextSentence)}</div>
       <p class="find-q">${esc(w.contextQuestion)}</p>
@@ -1071,7 +1137,9 @@ function finishLesson() {
     else card.box = 0;
   }
   for (const w of L.missed) {
-    if (findWord(w)) p.review[w] = { level: L.level.id, box: 0 };
+    const web = L.onlineByWord[w];
+    if (web) p.review[w] = { level: L.level.id, box: 0, parts: web.parts };
+    else if (findWord(w)) p.review[w] = { level: L.level.id, box: 0 };
   }
 
   for (const v of L.vocabResults) {
@@ -1212,6 +1280,7 @@ function renderParent() {
         <li><b>Don't rush mastery.</b> A level unlocks at ${Math.round(MASTERY * 100)}% first-try accuracy. Repeating a level is normal and builds automaticity.</li>
         <li><b>Praise effort, not speed.</b> Say "You kept trying on that hard word!" instead of "You're so smart."</li>
         <li><b>Placement:</b> Run the 2-minute placement check, or pick a starting level above. If accuracy stays below 60%, move back one level.</li>
+        <li><b>Fresh words:</b> With "Add fresh words from the internet" on, each lesson mixes in a few new words from online dictionaries (or made by Claude when the page can't reach them). They're checked to use only sounds your child has learned. They have no pictures, so your child reads them aloud and checks by listening — a great moment to listen in.</li>
         <li><b>Grade setting:</b> It doesn't lock your child into grade-level material. It sets the target level, lesson length, grade vocabulary, the reading-speed goal, and a more grown-up tone for Grades 3–8 — while lessons still meet them at their real skill level.</li>
       </ul>
       <h3>🧠 Helpers for different learners</h3>

@@ -274,6 +274,14 @@
 
     <p class="screen-sub">Pick a game and start practicing your spelling words!</p>
 
+    <div class="online-bar">
+      <label class="online-toggle">
+        <input type="checkbox" id="onlineToggle" />
+        <span>🌐 Mix in fresh words from the internet</span>
+      </label>
+      <span id="onlineStatus" class="online-status" role="status"></span>
+    </div>
+
     <div class="game-select-grid">
       <button class="game-sel-card gsc-blue" data-game="match">
         <div class="gsc-header">
@@ -409,6 +417,7 @@
 </footer>
 
 <script src="words-data.js"></script>
+<script src="online-words.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

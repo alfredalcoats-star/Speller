@@ -10,6 +10,7 @@ const state = {
   score: 0,
   total: 0,
   round: 0,
+  online: {},          // grade -> fresh words fetched from the internet
   matchState: {
     selectedWord: null,
     selectedDef:  null,
@@ -46,12 +47,60 @@ document.getElementById('logoHome').addEventListener('click', (e) => {
 document.getElementById('backFromGames').addEventListener('click', () => showScreen('homeScreen'));
 document.getElementById('backFromPractice').addEventListener('click', () => showScreen('gamesScreen'));
 
+/* ===================================================================
+   FRESH WORDS FROM THE INTERNET
+   Each game mixes up to 4 fresh words into the grade's built-in list.
+   =================================================================== */
+const ONLINE_KEY = 'spellinghive.onlineWords';
+function onlineEnabled() {
+  try { return localStorage.getItem(ONLINE_KEY) !== 'off'; } catch (e) { return true; }
+}
+
+function fetchOnlineWords(grade) {
+  const status = document.getElementById('onlineStatus');
+  if (!onlineEnabled() || typeof OnlineWords === 'undefined') { status.textContent = ''; return; }
+  if (state.online[grade]?.length) { showOnlineStatus(grade); return; }
+  status.textContent = '⏳ Finding fresh words…';
+  const builtIn = GRADE_WORDS[grade].map(w => w.word);
+  OnlineWords.gradeWords(grade, builtIn).then(words => {
+    state.online[grade] = words;
+    if (state.currentGrade === grade) showOnlineStatus(grade);
+  });
+}
+
+function showOnlineStatus(grade) {
+  const words = state.online[grade] || [];
+  const status = document.getElementById('onlineStatus');
+  if (!onlineEnabled()) status.textContent = '';
+  else if (!words.length) status.textContent = 'Couldn\'t get new words right now — using built-in words.';
+  else status.textContent = words[0].source === 'claude'
+    ? `✨ ${words.length} new words ready (made by Claude)`
+    : `✅ ${words.length} fresh words ready from online dictionaries`;
+}
+
+/* Built-in words, plus up to 4 fresh ones when available */
+function buildWordSet(grade) {
+  const builtIn = shuffle([...GRADE_WORDS[grade]]);
+  const fresh = onlineEnabled() ? shuffle([...(state.online[grade] || [])]).slice(0, 4) : [];
+  return shuffle([...builtIn.slice(0, 8 - fresh.length), ...fresh]);
+}
+
+const webBadge = w => w.source ? ' <span class="web-badge" title="Fresh word from the internet">🌐</span>' : '';
+
+const onlineToggle = document.getElementById('onlineToggle');
+onlineToggle.checked = onlineEnabled();
+onlineToggle.addEventListener('change', () => {
+  try { localStorage.setItem(ONLINE_KEY, onlineToggle.checked ? 'on' : 'off'); } catch (e) { /* ignore */ }
+  if (state.currentGrade) fetchOnlineWords(state.currentGrade);
+  showOnlineStatus(state.currentGrade);
+});
+
 /* ===== GRADE CARDS ===== */
 document.querySelectorAll('.grade-card').forEach(card => {
   card.addEventListener('click', () => {
     const grade = card.dataset.grade;
     state.currentGrade = grade;
-    state.words = shuffle([...GRADE_WORDS[grade]]);
+    fetchOnlineWords(grade);
     const label = grade === 'K' ? 'Kindergarten' : `Grade ${grade}`;
     document.getElementById('gradeTitle').textContent = `${label} — Choose a Game`;
     document.querySelector('#gamesScreen .screen-sub').textContent =
@@ -63,14 +112,16 @@ document.querySelectorAll('.grade-card').forEach(card => {
 /* ===== GAME CARDS ===== */
 document.querySelectorAll('.game-sel-card').forEach(card => {
   card.addEventListener('click', () => {
+    if (!state.currentGrade) { showToast('Pick a grade first! 📚'); showScreen('homeScreen'); return; }
     state.currentGame = card.dataset.game;
+    state.words = buildWordSet(state.currentGrade);
     startGame(card.dataset.game);
   });
 });
 
 /* ===== RESULT BUTTONS ===== */
 document.getElementById('playAgainBtn').addEventListener('click', () => {
-  state.words = shuffle([...GRADE_WORDS[state.currentGrade]]);
+  state.words = buildWordSet(state.currentGrade);
   startGame(state.currentGame);
 });
 document.getElementById('chooseGameBtn').addEventListener('click', () => showScreen('gamesScreen'));
@@ -178,7 +229,7 @@ function buildMatchGame() {
   state.matchState = { selectedWord: null, selectedDef: null, matched: new Set() };
   const words = state.words;
 
-  const wordItems = shuffle(words.map(w => ({ id: w.word, label: w.word })));
+  const wordItems = shuffle(words.map(w => ({ id: w.word, label: w.word + webBadge(w) })));
   const defItems  = shuffle(words.map(w => ({ id: w.word, label: w.definition })));
 
   document.getElementById('gameArea').innerHTML = `
@@ -284,7 +335,7 @@ function buildContextRound() {
 
   document.getElementById('gameArea').innerHTML = `
     <div class="context-card">
-      <div class="round-label">🔍 Round ${state.round + 1} of ${state.words.length}</div>
+      <div class="round-label">🔍 Round ${state.round + 1} of ${state.words.length}${w.source ? ' · 🌐 fresh word' : ''}</div>
       <div class="context-sentence-box">${sentenceHighlighted}</div>
       <div class="context-question">${w.contextQuestion}</div>
       <div class="context-choices">${choicesHtml}</div>
@@ -350,7 +401,7 @@ function buildMissingRound() {
 
   document.getElementById('gameArea').innerHTML = `
     <div class="missing-card">
-      <div class="round-label">✏️ Round ${state.round + 1} of ${state.words.length}</div>
+      <div class="round-label">✏️ Round ${state.round + 1} of ${state.words.length}${w.source ? ' · 🌐 fresh word' : ''}</div>
       <div class="missing-sentence">${sentenceHtml}</div>
       <div class="word-choices">
         ${choices.map(c => `<button class="word-chip" data-word="${c}">${c}</button>`).join('')}

@@ -482,3 +482,6 @@ body.rb-ruler .story:not(:has(.current)) .story-line { opacity: 1; }
 body.rb-band-mid .break-emoji, body.rb-band-teen .break-emoji { animation: none; }
 body.rb-band-teen .sound-card, body.rb-band-teen .heart-card { border-width: 3px; }
 body.rb-band-teen .result-stars { display: none; }
+
+/* ===== FRESH INTERNET WORDS ===== */
+.loading-card { text-align: center; font-weight: 800; font-size: 1.2rem; color: var(--text-mid); padding: 48px 20px; }
