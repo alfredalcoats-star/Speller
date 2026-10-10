@@ -21,23 +21,36 @@ const OnlineWords = (() => {
   const FRESH_FOR_MS = 12 * 60 * 60 * 1000;   // refetch at most twice a day
   const TIMEOUT_MS = 7000;
 
-  /* ---------- Kid-safety filter ---------- */
-  // Word starts that are never OK in a children's lesson…
-  const BLOCKED_STARTS = [
-    'sex', 'porn', 'nude', 'naked', 'rape', 'kill', 'murder', 'suicide', 'drug', 'cocaine', 'vodka',
-    'drunk', 'rifle', 'pistol', 'bomb', 'terror', 'slave', 'nazi', 'shit', 'fuck', 'bitch', 'bastard',
-    'piss', 'pussy', 'boob', 'slut', 'whore', 'nigg', 'retard', 'spaz', 'cunt', 'twat', 'wank', 'corpse',
-    'torture', 'abuse', 'erotic', 'casino', 'gambl', 'cigar', 'tobacco', 'stupid', 'idiot', 'satan',
-    'demon', 'lynch', 'genit', 'beer', 'whiskey', 'liquor',
+  /* ---------- Kid-safety filter ----------
+     Two levels:
+     - SERIOUS: never OK anywhere (profanity, sexual content, slurs, drugs and
+       alcohol, graphic violence). Every story and word list is checked against it.
+     - PRACTICE: also kept out of the short practice words and definitions the site
+       picks on its own. Ordinary words like "hate" or "dead" can be fine inside a
+       story ("Most robots hate rain"), so stories only use the serious list. */
+  const SERIOUS_STARTS = [
+    'sex', 'porn', 'nude', 'naked', 'rape', 'murder', 'suicide', 'cocaine', 'vodka', 'drunk',
+    'shit', 'fuck', 'bitch', 'bastard', 'piss', 'pussy', 'slut', 'whore', 'nigg', 'retard', 'spaz',
+    'cunt', 'twat', 'wank', 'torture', 'erotic', 'genit', 'lynch', 'whiskey', 'liquor',
   ];
-  // …and whole words that are fine inside longer words ("hello", "father", "button")
-  const BLOCKED_WORDS = [
-    'ass', 'arse', 'tit', 'tits', 'dick', 'cock', 'crap', 'damn', 'hell', 'fag', 'gay', 'gun', 'guns',
-    'heroin', 'meth', 'weed', 'wine', 'dead', 'die', 'dies', 'died', 'death', 'stab', 'lust', 'breast',
-    'butt', 'poop', 'pee', 'hate', 'hated', 'dumb', 'fat', 'ugly', 'devil', 'hang', 'hanged', 'vape',
+  const SERIOUS_WORDS = [
+    'ass', 'arse', 'tit', 'tits', 'dick', 'cock', 'crap', 'damn', 'fag', 'heroin', 'meth', 'beer', 'lust', 'vape',
   ];
-  const BLOCK_RE = new RegExp(`\\b(${BLOCKED_STARTS.join('|')})|\\b(${BLOCKED_WORDS.join('|')})\\b`, 'i');
-  const isSafe = text => !BLOCK_RE.test(text || '');
+  const PRACTICE_STARTS = [
+    'kill', 'drug', 'rifle', 'pistol', 'bomb', 'terror', 'slave', 'nazi', 'boob', 'corpse', 'abuse',
+    'casino', 'gambl', 'cigar', 'tobacco', 'stupid', 'idiot', 'satan', 'demon',
+  ];
+  const PRACTICE_WORDS = [
+    'hell', 'gun', 'guns', 'weed', 'wine', 'dead', 'die', 'dies', 'died', 'death', 'stab', 'breast',
+    'butt', 'poop', 'pee', 'hate', 'hated', 'dumb', 'fat', 'ugly', 'devil', 'hang', 'hanged',
+  ];
+  const wordsRe = (starts, words) => new RegExp(`\\b(${starts.join('|')})|\\b(${words.join('|')})\\b`, 'i');
+  const SERIOUS_RE = wordsRe(SERIOUS_STARTS, SERIOUS_WORDS);
+  const PRACTICE_RE = wordsRe(PRACTICE_STARTS, PRACTICE_WORDS);
+  /** For words and definitions the site picks itself: both lists */
+  const isSafe = text => !SERIOUS_RE.test(text || '') && !PRACTICE_RE.test(text || '');
+  /** For whole stories: the serious list only */
+  const isSafeStory = text => !SERIOUS_RE.test(text || '');
 
   /* ---------- Small helpers ---------- */
   const shuffle = arr => {
@@ -498,5 +511,5 @@ const OnlineWords = (() => {
     return Promise.race([promise, new Promise(r => setTimeout(() => r(fallback), ms))]);
   }
 
-  return { gradeWords, levelWords, describeWords, sourceOf, within, isSafe, decode, chunk };
+  return { gradeWords, levelWords, describeWords, sourceOf, within, isSafe, isSafeStory, decode, chunk };
 })();
