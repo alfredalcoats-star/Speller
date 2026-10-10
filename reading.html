@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reading Boost</title>
+  <meta name="description" content="A structured, multisensory phonics program that helps kids with dyslexia, ADHD and other learning differences build reading skills fast." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Lexend:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="reading.css" />
+  <link rel="stylesheet" href="theme.css" />
+</head>
+<body data-app="reading">
+
+<div id="confettiContainer" class="confetti-container" aria-hidden="true"></div>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+  <div class="suite-bar">
+    <div class="suite-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark"><svg class="bee" viewBox="0 0 160 190" xmlns="http://www.w3.org/2000/svg" aria-label="Happy bee mascot">
+          <!-- Wings (behind body) -->
+          <ellipse cx="42" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-left"/>
+          <ellipse cx="118" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-right"/>
+          <!-- Body -->
+          <ellipse cx="80" cy="128" rx="38" ry="32" fill="#FFD700"/>
+          <!-- Stripes -->
+          <path d="M44 118 Q80 111 116 118" stroke="#1a1a1a" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M43 132 Q80 125 117 132" stroke="#1a1a1a" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <!-- Body border -->
+          <ellipse cx="80" cy="128" rx="38" ry="32" fill="none" stroke="#c8950a" stroke-width="2.5"/>
+          <!-- Stinger -->
+          <polygon points="80,159 71,176 89,176" fill="#e6a800" stroke="#b8840a" stroke-width="1.5"/>
+          <!-- Neck connector -->
+          <ellipse cx="80" cy="94" rx="15" ry="11" fill="#FFD700" stroke="#c8950a" stroke-width="2"/>
+          <!-- Head -->
+          <circle cx="80" cy="68" r="30" fill="#FFD700" stroke="#c8950a" stroke-width="2.5"/>
+          <!-- Forehead shine -->
+          <ellipse cx="72" cy="52" rx="10" ry="6" fill="rgba(255,255,255,0.3)" transform="rotate(-15,72,52)"/>
+          <!-- Eyes -->
+          <circle cx="65" cy="62" r="11" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="95" cy="62" r="11" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="67" cy="63" r="6.5" fill="#1a1a1a"/>
+          <circle cx="97" cy="63" r="6.5" fill="#1a1a1a"/>
+          <!-- Eye shine -->
+          <circle cx="70" cy="60" r="2.5" fill="white"/>
+          <circle cx="100" cy="60" r="2.5" fill="white"/>
+          <!-- Happy smile -->
+          <path d="M60 80 Q80 98 100 80" stroke="#1a1a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <!-- Rosy cheeks -->
+          <circle cx="52" cy="74" r="9" fill="#FF9EAB" opacity="0.45"/>
+          <circle cx="108" cy="74" r="9" fill="#FF9EAB" opacity="0.45"/>
+          <!-- Antennae -->
+          <path d="M68 40 Q58 22 46 12" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="44" cy="10" r="7" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M92 40 Q102 22 114 12" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="116" cy="10" r="7" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
+          <!-- Tiny heart on antenna -->
+          <text x="38" y="10" font-size="8" text-anchor="middle">♥</text>
+          <text x="114" y="10" font-size="8" text-anchor="middle">♥</text>
+        </svg></span>
+        <span class="brand-text"><span class="brand-name">SpellingHive</span><span class="brand-sub">Reading &amp; spelling, grades K–8</span></span>
+      </a>
+      <nav class="suite-nav" aria-label="SpellingHive tools">
+        <a class="suite-link" data-app="spell" href="index.html"><span class="app-dot" aria-hidden="true"></span>Spelling Games</a>
+        <a class="suite-link" data-app="reading" href="reading.html" aria-current="page"><span class="app-dot" aria-hidden="true"></span>Reading Boost</a>
+        <a class="suite-link" data-app="story" href="stories.html"><span class="app-dot" aria-hidden="true"></span>Story Check</a>
+        <a class="suite-link" data-app="library" href="library.html"><span class="app-dot" aria-hidden="true"></span>Story Library</a>
+      </nav>
+    </div>
+  </div>
+  <div class="sub-bar">
+    <div class="sub-inner">
+      <span class="sub-title">Reading Boost</span>
+      <nav class="top-nav" aria-label="Reading Boost sections">
+        <button class="nav-btn" id="navMap">My Path</button>
+        <button class="nav-btn" id="navParent">Grown-Ups</button>
+        <button class="nav-btn" id="navSettings" aria-haspopup="dialog">Reading Helpers</button>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<!-- ===== PROFILE SCREEN ===== -->
+<main id="profileScreen" class="screen rb-screen">
+  <div class="inner-wrap">
+    <section class="rb-hero">
+      <div class="hero-badge">Grades K–8 · Built for dyslexia, ADHD, autism &amp; every kind of learner</div>
+      <h1 class="hero-title">Reading Boost</h1>
+      <p class="hero-sub">Short, step-by-step phonics lessons that use seeing, hearing, saying and touching — the way research shows struggling readers learn best.</p>
+    </section>
+
+    <h2 class="section-heading">Who is reading today?</h2>
+    <div id="profileGrid" class="profile-grid"></div>
+
+    <form id="newProfileForm" class="new-profile hidden" autocomplete="off">
+      <h3>Add a reader</h3>
+      <label for="newName">First name</label>
+      <input id="newName" maxlength="20" required placeholder="e.g. Maya" />
+      <label for="newGrade">Grade in school</label>
+      <select id="newGrade" required>
+        <option value="K">Kindergarten</option>
+        <option value="1" selected>Grade 1</option>
+        <option value="2">Grade 2</option>
+        <option value="3">Grade 3</option>
+        <option value="4">Grade 4</option>
+        <option value="5">Grade 5</option>
+        <option value="6">Grade 6</option>
+        <option value="7">Grade 7</option>
+        <option value="8">Grade 8</option>
+      </select>
+      <fieldset>
+        <legend>Pick a buddy</legend>
+        <div id="avatarPick" class="avatar-pick"></div>
+      </fieldset>
+      <div class="row-btns">
+        <button type="submit" class="btn-primary">Save reader</button>
+        <button type="button" class="btn-outline" id="cancelNewProfile">Cancel</button>
+      </div>
+    </form>
+
+    <section class="pillars">
+      <div class="pillar"><span>👀</span><b>See it</b><p>Big, clear letters with sound boxes and picture clues.</p></div>
+      <div class="pillar"><span>👂</span><b>Hear it</b><p>Tap any word to hear it. Instructions can be read aloud.</p></div>
+      <div class="pillar"><span>🗣️</span><b>Say it</b><p>Kids read out loud every step — the fastest path to fluency.</p></div>
+      <div class="pillar"><span>✋</span><b>Build it</b><p>Tap letter tiles to spell words. No dragging, no time limits.</p></div>
+    </section>
+  </div>
+</main>
+
+<!-- ===== STARTING POINT / PLACEMENT ===== -->
+<main id="placeScreen" class="screen rb-screen">
+  <div class="inner-wrap" id="placeBody"></div>
+</main>
+
+<!-- ===== LEVEL MAP ===== -->
+<main id="mapScreen" class="screen rb-screen">
+  <div class="inner-wrap">
+    <div class="screen-topbar">
+      <button class="back-btn" id="switchReader"><span class="back-arrow">←</span> Readers</button>
+      <h2 class="screen-title" id="mapTitle">My Reading Path</h2>
+      <div class="score-pill"><span class="score-star">⭐</span><span id="mapStars">0</span></div>
+    </div>
+
+    <div class="today-card" id="todayCard"></div>
+    <ol class="level-path" id="levelPath"></ol>
+  </div>
+</main>
+
+<!-- ===== LESSON ===== -->
+<main id="lessonScreen" class="screen rb-screen">
+  <div class="inner-wrap">
+    <div class="screen-topbar">
+      <button class="back-btn" id="quitLesson"><span class="back-arrow">←</span> Stop</button>
+      <h2 class="screen-title" id="lessonTitle">Lesson</h2>
+      <div class="score-pill"><span class="score-star">⭐</span><span id="lessonStars">0</span></div>
+    </div>
+    <div class="step-dots" id="stepDots" aria-label="Lesson steps"></div>
+    <div id="activity" class="activity" aria-live="polite"></div>
+  </div>
+</main>
+
+<!-- ===== GROWN-UPS DASHBOARD ===== -->
+<main id="parentScreen" class="screen rb-screen">
+  <div class="inner-wrap">
+    <div class="screen-topbar">
+      <button class="back-btn" id="backFromParent"><span class="back-arrow">←</span> Back</button>
+      <h2 class="screen-title">👪 Grown-Ups Corner</h2>
+    </div>
+    <div id="parentBody"></div>
+  </div>
+</main>
+
+<!-- ===== SETTINGS DIALOG ===== -->
+<dialog id="settingsDialog" class="settings-dialog" aria-labelledby="settingsTitle">
+  <form method="dialog" id="settingsForm">
+    <h2 id="settingsTitle">⚙️ Reading Helpers</h2>
+    <p class="settings-note">Try different helpers to find what makes reading feel easiest. Saved for each reader.</p>
+
+    <label class="set-row">Letter style
+      <select name="font">
+        <option value="default">Friendly (Nunito)</option>
+        <option value="lexend">Easy-read (Lexend)</option>
+        <option value="atkinson">Extra-clear (Atkinson Hyperlegible)</option>
+      </select>
+    </label>
+
+    <label class="set-row">Text size
+      <select name="size">
+        <option value="m">Medium</option>
+        <option value="l">Large</option>
+        <option value="xl">Extra large</option>
+      </select>
+    </label>
+
+    <label class="set-row">Spacing
+      <select name="spacing">
+        <option value="normal">Normal</option>
+        <option value="wide">Wide (less crowding)</option>
+      </select>
+    </label>
+
+    <div class="set-row">Color tint behind words
+      <div class="tint-pick" role="radiogroup" aria-label="Color tint">
+        <label><input type="radio" name="tint" value="none" /><span class="tint t-none">None</span></label>
+        <label><input type="radio" name="tint" value="cream" /><span class="tint t-cream">Cream</span></label>
+        <label><input type="radio" name="tint" value="blue" /><span class="tint t-blue">Blue</span></label>
+        <label><input type="radio" name="tint" value="green" /><span class="tint t-green">Green</span></label>
+        <label><input type="radio" name="tint" value="peach" /><span class="tint t-peach">Peach</span></label>
+        <label><input type="radio" name="tint" value="lilac" /><span class="tint t-lilac">Lilac</span></label>
+      </div>
+    </div>
+
+    <label class="set-row">Voice speed
+      <select name="rate">
+        <option value="0.6">Slow</option>
+        <option value="0.8">Medium</option>
+        <option value="1">Normal</option>
+      </select>
+    </label>
+
+    <label class="set-check"><input type="checkbox" name="autoRead" /> Read instructions out loud</label>
+    <label class="set-check"><input type="checkbox" name="ruler" /> Reading ruler (one line at a time)</label>
+    <label class="set-check"><input type="checkbox" name="breaks" /> Brain breaks between activities</label>
+    <label class="set-check"><input type="checkbox" name="calm" /> Calm mode (no animations or confetti)</label>
+    <label class="set-check"><input type="checkbox" name="quick" /> Short lessons (about 5 minutes)</label>
+    <label class="set-check"><input type="checkbox" name="online" /> 🌐 Add fresh words from the internet</label>
+
+    <div class="set-preview" id="setPreview">The cat sat on a mat.</div>
+
+    <div class="row-btns">
+      <button class="btn-primary" value="save">Done</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <b>SpellingHive</b>
+      <p>Free reading and spelling practice for grades K–8, built on structured literacy and designed for every kind of learner.</p>
+    </div>
+    <div class="footer-col">
+      <h4>For schools &amp; families</h4>
+      <ul>
+        <li>No accounts or sign-ups</li>
+        <li>No ads</li>
+        <li>Progress stays on this device</li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Tools</h4>
+      <ul>
+        <li><a href="index.html">Spelling Games</a></li>
+        <li><a href="reading.html">Reading Boost</a></li>
+        <li><a href="stories.html">Story Check</a></li>
+        <li><a href="library.html">Story Library</a></li>
+      </ul>
+    </div>
+  </div>
+  <p class="footer-note">Reading Boost is a practice tool. It does not replace an evaluation or therapy from a reading specialist, speech-language pathologist or school IEP team.</p>
+</footer>
+
+<script src="ui.js"></script>
+<script src="words-data.js"></script>
+<script src="online-words.js"></script>
+<script src="word-lists.js"></script>
+<script src="comprehension.js"></script>
+<script src="reading-data.js"></script>
+<script src="reading.js"></script>
+</body>
+</html>

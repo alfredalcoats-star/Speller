@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Story Library</title>
+  <meta name="description" content="Free read-for-fun stories for grades K-8, plus brand-new stories written at your child's reading level, each with comprehension questions." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Lexend:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="library.css" />
+  <link rel="stylesheet" href="theme.css" />
+</head>
+<body data-app="library">
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+  <div class="suite-bar">
+    <div class="suite-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark"><svg class="bee" viewBox="0 0 160 190" xmlns="http://www.w3.org/2000/svg" aria-label="Happy bee mascot">
+          <!-- Wings (behind body) -->
+          <ellipse cx="42" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-left"/>
+          <ellipse cx="118" cy="90" rx="36" ry="22" fill="rgba(186,230,255,0.85)" stroke="#7ec8f0" stroke-width="2" class="wing-right"/>
+          <!-- Body -->
+          <ellipse cx="80" cy="128" rx="38" ry="32" fill="#FFD700"/>
+          <!-- Stripes -->
+          <path d="M44 118 Q80 111 116 118" stroke="#1a1a1a" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M43 132 Q80 125 117 132" stroke="#1a1a1a" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <!-- Body border -->
+          <ellipse cx="80" cy="128" rx="38" ry="32" fill="none" stroke="#c8950a" stroke-width="2.5"/>
+          <!-- Stinger -->
+          <polygon points="80,159 71,176 89,176" fill="#e6a800" stroke="#b8840a" stroke-width="1.5"/>
+          <!-- Neck connector -->
+          <ellipse cx="80" cy="94" rx="15" ry="11" fill="#FFD700" stroke="#c8950a" stroke-width="2"/>
+          <!-- Head -->
+          <circle cx="80" cy="68" r="30" fill="#FFD700" stroke="#c8950a" stroke-width="2.5"/>
+          <!-- Forehead shine -->
+          <ellipse cx="72" cy="52" rx="10" ry="6" fill="rgba(255,255,255,0.3)" transform="rotate(-15,72,52)"/>
+          <!-- Eyes -->
+          <circle cx="65" cy="62" r="11" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="95" cy="62" r="11" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="67" cy="63" r="6.5" fill="#1a1a1a"/>
+          <circle cx="97" cy="63" r="6.5" fill="#1a1a1a"/>
+          <!-- Eye shine -->
+          <circle cx="70" cy="60" r="2.5" fill="white"/>
+          <circle cx="100" cy="60" r="2.5" fill="white"/>
+          <!-- Happy smile -->
+          <path d="M60 80 Q80 98 100 80" stroke="#1a1a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <!-- Rosy cheeks -->
+          <circle cx="52" cy="74" r="9" fill="#FF9EAB" opacity="0.45"/>
+          <circle cx="108" cy="74" r="9" fill="#FF9EAB" opacity="0.45"/>
+          <!-- Antennae -->
+          <path d="M68 40 Q58 22 46 12" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="44" cy="10" r="7" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M92 40 Q102 22 114 12" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="116" cy="10" r="7" fill="#FF6B35" stroke="#1a1a1a" stroke-width="2"/>
+          <!-- Tiny heart on antenna -->
+          <text x="38" y="10" font-size="8" text-anchor="middle">♥</text>
+          <text x="114" y="10" font-size="8" text-anchor="middle">♥</text>
+        </svg></span>
+        <span class="brand-text"><span class="brand-name">SpellingHive</span><span class="brand-sub">Reading &amp; spelling, grades K–8</span></span>
+      </a>
+      <nav class="suite-nav" aria-label="SpellingHive tools">
+        <a class="suite-link" data-app="spell" href="index.html"><span class="app-dot" aria-hidden="true"></span>Spelling Games</a>
+        <a class="suite-link" data-app="reading" href="reading.html"><span class="app-dot" aria-hidden="true"></span>Reading Boost</a>
+        <a class="suite-link" data-app="story" href="stories.html"><span class="app-dot" aria-hidden="true"></span>Story Check</a>
+        <a class="suite-link" data-app="library" href="library.html" aria-current="page"><span class="app-dot" aria-hidden="true"></span>Story Library</a>
+      </nav>
+    </div>
+  </div>
+  <div class="sub-bar">
+    <div class="sub-inner">
+      <span class="sub-title">Story Library</span>
+      <nav class="top-nav" aria-label="Story Library sections">
+        <button class="nav-btn active" id="navShelf">Stories</button>
+        <button class="nav-btn" id="navWrite">Write a New Story</button>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<!-- ===== SHELF ===== -->
+<main id="shelfScreen" class="screen active">
+  <div class="inner-wrap lib-wrap">
+    <section class="lib-hero">
+      <div class="lib-hero-copy">
+        <p class="eyebrow">Free stories · Grades K–8</p>
+        <h1 class="hero-title">Story Library</h1>
+        <p class="hero-sub">Pick a grade to see stories at the right reading level. Want something new? Choose a kind of story and get a brand-new one written just for you, with questions to check what you read.</p>
+      </div>
+      <div class="lib-grade-picker">
+        <label for="libGrade">Reading level</label>
+        <select id="libGrade"></select>
+        <p class="lib-reader" id="libReader"></p>
+      </div>
+    </section>
+
+    <section class="lib-shelf">
+      <div class="lib-shelf-head">
+        <h2 class="section-heading" id="shelfTitle">Stories</h2>
+        <button class="btn-primary" id="openWriter">✨ Write me a new story</button>
+      </div>
+      <div class="lib-grid" id="shelfGrid"></div>
+    </section>
+
+    <section class="lib-shelf" id="mineSection">
+      <h2 class="section-heading">My new stories</h2>
+      <p class="section-sub">Stories written for you are saved here on this device.</p>
+      <div class="lib-grid" id="mineGrid"></div>
+    </section>
+
+    <section class="lib-shelf">
+      <h2 class="section-heading">More to read</h2>
+      <div class="lib-more">
+        <a class="lib-more-card" href="stories.html"><b>Story Check</b><span>18 more passages with test-style questions and a skills report.</span></a>
+        <a class="lib-more-card" href="reading.html"><b>Reading Boost</b><span>Short decodable stories inside step-by-step phonics lessons.</span></a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ===== WRITE A NEW STORY ===== -->
+<main id="writeScreen" class="screen">
+  <div class="inner-wrap lib-wrap">
+    <div class="screen-topbar">
+      <button class="back-btn" id="backFromWrite"><span class="back-arrow">←</span> Library</button>
+      <h2 class="screen-title">Write a New Story</h2>
+    </div>
+    <form class="lib-writer" id="writerForm" autocomplete="off">
+      <div class="lib-field">
+        <span class="lib-label">1. Reading level</span>
+        <select id="writeGrade" aria-label="Reading level"></select>
+      </div>
+      <fieldset class="lib-field">
+        <legend class="lib-label">2. What kind of story?</legend>
+        <div class="lib-genres" id="genreGrid"></div>
+      </fieldset>
+      <div class="lib-field">
+        <label class="lib-label" for="writeTopic">3. What should it be about? <small>(optional)</small></label>
+        <input id="writeTopic" maxlength="60" placeholder="e.g. a puppy who is afraid of the rain" />
+      </div>
+      <fieldset class="lib-field">
+        <legend class="lib-label">4. How long?</legend>
+        <div class="lib-lengths">
+          <label><input type="radio" name="writeLength" value="short" checked /> <span>Short</span></label>
+          <label><input type="radio" name="writeLength" value="long" /> <span>Longer</span></label>
+        </div>
+      </fieldset>
+      <button type="submit" class="btn-primary lib-go" id="writeBtn">✨ Write my story</button>
+      <div class="lib-status" id="writeStatus" role="status" aria-live="polite"></div>
+    </form>
+  </div>
+</main>
+
+<!-- ===== READ ===== -->
+<main id="readScreen" class="screen">
+  <div class="inner-wrap lib-wrap">
+    <div class="screen-topbar">
+      <button class="back-btn" id="backFromRead"><span class="back-arrow">←</span> Library</button>
+      <h2 class="screen-title" id="readTitle">Story</h2>
+    </div>
+    <div class="lib-tools" role="toolbar" aria-label="Reading tools">
+      <button class="sc-tool" id="toolListen" aria-pressed="false">🔊 Read to me</button>
+      <button class="sc-tool" id="toolEasy" aria-pressed="false">Aa Easy-read font</button>
+      <button class="sc-tool" id="toolBigger">A+ Text size</button>
+    </div>
+    <article class="lib-story" id="storyBody"></article>
+    <section class="lib-questions" id="questionBox"></section>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="confettiContainer" class="confetti-container" aria-hidden="true"></div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <b>SpellingHive</b>
+      <p>Free reading and spelling practice for grades K–8, built on structured literacy and designed for every kind of learner.</p>
+    </div>
+    <div class="footer-col">
+      <h4>For schools &amp; families</h4>
+      <ul>
+        <li>No accounts or sign-ups</li>
+        <li>No ads</li>
+        <li>Progress stays on this device</li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Tools</h4>
+      <ul>
+        <li><a href="index.html">Spelling Games</a></li>
+        <li><a href="reading.html">Reading Boost</a></li>
+        <li><a href="stories.html">Story Check</a></li>
+        <li><a href="library.html">Story Library</a></li>
+      </ul>
+    </div>
+  </div>
+  <p class="footer-note">Built-in stories are original and free to read. New stories are written by Claude on request and checked for reading level and kid-safe words; a grown-up should still read along.</p>
+</footer>
+
+<script src="ui.js"></script>
+<script src="online-words.js"></script>
+<script src="comprehension.js"></script>
+<script src="library-data.js"></script>
+<script src="library.js"></script>
+</body>
+</html>
