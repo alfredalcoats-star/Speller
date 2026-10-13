@@ -812,9 +812,10 @@ function buildSpellRound() {
       <div class="spell-listen">
         <button class="spell-hear" id="spellHear">🔊 Hear the word</button>
         <button class="spell-hint" id="spellSentence">💬 Hear it in a sentence</button>
+        <button class="spell-hint meaning" id="spellMeaning">📖 Hear the meaning</button>
       </div>
+      <p class="spell-sentence" id="spellMeaningText" hidden></p>
       <p class="spell-sentence" id="spellSentenceText" hidden></p>
-      ${w.definition ? `<p class="spell-meaning">💡 ${w.definition}</p>` : ''}
       <div class="spell-slots" id="spellSlots">${target.map(() => '<span class="spell-slot"></span>').join('')}</div>
       <div class="spell-bank" id="spellBank">${bank.map((t, k) =>
         `<button class="spell-tile" data-k="${k}" data-t="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('')}</div>
@@ -828,62 +829,94 @@ function buildSpellRound() {
   const hear = () => speakText(w.word);
   document.getElementById('spellHear').addEventListener('click', hear);
   document.getElementById('spellSentence').addEventListener('click', () => sayInSentence(w));
+  document.getElementById('spellMeaning').addEventListener('click', () => sayMeaning(w));
   document.querySelectorAll('.spell-tile').forEach(t => t.addEventListener('click', () => addSpellTile(t)));
   document.getElementById('spellUndo').addEventListener('click', undoSpellTile);
   document.getElementById('spellCheck').addEventListener('click', checkSpelling);
   setTimeout(hear, 300);
 }
 
-/* ---------- "Hear it in a sentence" for every word ----------
-   Word, sentence, word, the way spelling tests are given. The sentence comes
-   from the word itself, the built-in grade words, a sentence found earlier,
-   or a quick lookup (online dictionary, or Claude on claude.ai). */
+/* ---------- "Hear it in a sentence" and "Hear the meaning" for every word ----------
+   The sentence is read word, sentence, word, the way spelling tests are given.
+   Both come from the word itself, the built-in grade words, what was found
+   earlier on this device, or one quick lookup (online dictionary, or Claude on
+   claude.ai) that brings back the meaning and a sentence together. */
 const SENTENCE_KEY = 'spellinghive.sentences';
-function sentenceCache() {
-  try { return JSON.parse(localStorage.getItem(SENTENCE_KEY)) || {}; } catch (e) { return {}; }
+const MEANING_KEY = 'spellinghive.meanings';
+function readCache(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { return {}; }
 }
-function rememberSentence(word, sentence) {
-  const cache = sentenceCache();
-  cache[word.toLowerCase()] = sentence;
-  try { localStorage.setItem(SENTENCE_KEY, JSON.stringify(cache)); } catch (e) { /* ignore */ }
+function remember(key, word, text) {
+  const cache = readCache(key);
+  cache[word.toLowerCase()] = text;
+  try { localStorage.setItem(key, JSON.stringify(cache)); } catch (e) { /* ignore */ }
 }
-function knownSentence(w) {
-  if (w.contextSentence) return w.contextSentence;
-  const key = w.word.toLowerCase();
+function builtInWord(word) {
+  const key = word.toLowerCase();
   for (const grade of Object.values(GRADE_WORDS)) {
     const hit = grade.find(e => e.word.toLowerCase() === key);
-    if (hit) return hit.contextSentence;
+    if (hit) return hit;
   }
-  return sentenceCache()[key] || null;
+  return null;
+}
+function knownSentence(w) {
+  return w.contextSentence || builtInWord(w.word)?.contextSentence || readCache(SENTENCE_KEY)[w.word.toLowerCase()] || null;
+}
+function knownMeaning(w) {
+  return w.definition || builtInWord(w.word)?.definition || readCache(MEANING_KEY)[w.word.toLowerCase()] || null;
+}
+const wordRegex = word => new RegExp(`\\b${escapeRegex(word)}\\b`, 'gi');
+
+/* One lookup fills in both the meaning and the sentence */
+async function lookUpWord(w, btn, busyLabel) {
+  if (typeof OnlineWords === 'undefined') return;
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = busyLabel;
+  try {
+    const found = await OnlineWords.within(OnlineWords.describeWords([w.word]), 15000, {});
+    const info = found[w.word];
+    if (info?.definition) remember(MEANING_KEY, w.word, info.definition);
+    if (info?.example && wordRegex(w.word).test(info.example)) remember(SENTENCE_KEY, w.word, info.example);
+  } catch (e) { /* nothing found */ }
+  btn.disabled = false;
+  btn.textContent = label;
+}
+
+function showHelp(id, text) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  el.hidden = false;
 }
 
 async function sayInSentence(w) {
   const btn = document.getElementById('spellSentence');
-  let sentence = knownSentence(w);
-  if (!sentence && typeof OnlineWords !== 'undefined') {
-    btn.disabled = true;
-    btn.textContent = '⏳ Finding a sentence…';
-    try {
-      const found = await OnlineWords.within(OnlineWords.describeWords([w.word]), 15000, {});
-      const example = found[w.word]?.example;
-      if (example && new RegExp(`\\b${escapeRegex(w.word)}\\b`, 'i').test(example)) {
-        sentence = example;
-        rememberSentence(w.word, example);
-      }
-    } catch (e) { /* no sentence available */ }
-    // The player may have moved on to another word while we looked
-    if (!document.body.contains(btn)) return;
-    btn.disabled = false;
-    btn.textContent = '💬 Hear it in a sentence';
-  }
-  const shown = document.getElementById('spellSentenceText');
+  if (!knownSentence(w)) await lookUpWord(w, btn, '⏳ Finding a sentence…');
+  // The player may have moved on to another word while we looked
+  if (!document.body.contains(btn)) return;
+  const sentence = knownSentence(w);
   if (sentence) {
     // On screen the word is blanked out, so the sentence helps without giving the spelling away
-    shown.textContent = '💬 ' + sentence.replace(new RegExp(`\\b${escapeRegex(w.word)}\\b`, 'gi'), '_____');
-    shown.hidden = false;
+    showHelp('spellSentenceText', '💬 ' + sentence.replace(wordRegex(w.word), '_____'));
     speakText(`${w.word}. ${sentence} ${w.word}.`, 0.8);
   } else {
     showToast('No sentence found for this word, so here it is again.');
+    speakText(`The word is ${w.word}. Spell ${w.word}.`, 0.8);
+  }
+}
+
+async function sayMeaning(w) {
+  const btn = document.getElementById('spellMeaning');
+  if (!knownMeaning(w)) await lookUpWord(w, btn, '⏳ Finding the meaning…');
+  if (!document.body.contains(btn)) return;
+  const meaning = knownMeaning(w);
+  if (meaning) {
+    const text = meaning.replace(/\.$/, '');
+    showHelp('spellMeaningText', '📖 ' + text.replace(wordRegex(w.word), '_____'));
+    speakText(`${w.word}. ${w.word} means: ${text}.`, 0.8);
+  } else {
+    showToast('No meaning found for this word, so here it is again.');
     speakText(`The word is ${w.word}. Spell ${w.word}.`, 0.8);
   }
 }

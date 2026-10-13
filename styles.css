@@ -1565,3 +1565,4 @@ body {
   background: var(--cream-2); border-radius: 12px; padding: 10px 14px; margin: 0 auto 12px; max-width: 560px;
 }
 .spell-hint:disabled { opacity: .6; cursor: wait; }
+.spell-hint.meaning { background: var(--teal-light, #DDF5F1); border-color: var(--teal, #0E9F8E); }
