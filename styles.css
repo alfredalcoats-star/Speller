@@ -1560,3 +1560,8 @@ body {
 .source-hint { color: var(--text-mid); font-weight: 700; font-size: .92rem; }
 .link-inline { background: none; border: none; padding: 0; font: inherit; color: var(--blue); text-decoration: underline; cursor: pointer; font-weight: 800; }
 @media (max-width: 640px) { .source-modes { grid-template-columns: 1fr; } }
+.spell-sentence {
+  text-align: center; font-weight: 700; color: var(--text-mid); font-size: 1.05rem; line-height: 1.5;
+  background: var(--cream-2); border-radius: 12px; padding: 10px 14px; margin: 0 auto 12px; max-width: 560px;
+}
+.spell-hint:disabled { opacity: .6; cursor: wait; }

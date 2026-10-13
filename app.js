@@ -811,8 +811,9 @@ function buildSpellRound() {
       <div class="round-label">🎧 Round ${state.round + 1} of ${state.words.length}${roundTag(w)}</div>
       <div class="spell-listen">
         <button class="spell-hear" id="spellHear">🔊 Hear the word</button>
-        ${w.contextSentence ? '<button class="spell-hint" id="spellSentence">💬 Hear it in a sentence</button>' : ''}
+        <button class="spell-hint" id="spellSentence">💬 Hear it in a sentence</button>
       </div>
+      <p class="spell-sentence" id="spellSentenceText" hidden></p>
       ${w.definition ? `<p class="spell-meaning">💡 ${w.definition}</p>` : ''}
       <div class="spell-slots" id="spellSlots">${target.map(() => '<span class="spell-slot"></span>').join('')}</div>
       <div class="spell-bank" id="spellBank">${bank.map((t, k) =>
@@ -826,11 +827,65 @@ function buildSpellRound() {
 
   const hear = () => speakText(w.word);
   document.getElementById('spellHear').addEventListener('click', hear);
-  document.getElementById('spellSentence')?.addEventListener('click', () => speakText(w.contextSentence));
+  document.getElementById('spellSentence').addEventListener('click', () => sayInSentence(w));
   document.querySelectorAll('.spell-tile').forEach(t => t.addEventListener('click', () => addSpellTile(t)));
   document.getElementById('spellUndo').addEventListener('click', undoSpellTile);
   document.getElementById('spellCheck').addEventListener('click', checkSpelling);
   setTimeout(hear, 300);
+}
+
+/* ---------- "Hear it in a sentence" for every word ----------
+   Word, sentence, word, the way spelling tests are given. The sentence comes
+   from the word itself, the built-in grade words, a sentence found earlier,
+   or a quick lookup (online dictionary, or Claude on claude.ai). */
+const SENTENCE_KEY = 'spellinghive.sentences';
+function sentenceCache() {
+  try { return JSON.parse(localStorage.getItem(SENTENCE_KEY)) || {}; } catch (e) { return {}; }
+}
+function rememberSentence(word, sentence) {
+  const cache = sentenceCache();
+  cache[word.toLowerCase()] = sentence;
+  try { localStorage.setItem(SENTENCE_KEY, JSON.stringify(cache)); } catch (e) { /* ignore */ }
+}
+function knownSentence(w) {
+  if (w.contextSentence) return w.contextSentence;
+  const key = w.word.toLowerCase();
+  for (const grade of Object.values(GRADE_WORDS)) {
+    const hit = grade.find(e => e.word.toLowerCase() === key);
+    if (hit) return hit.contextSentence;
+  }
+  return sentenceCache()[key] || null;
+}
+
+async function sayInSentence(w) {
+  const btn = document.getElementById('spellSentence');
+  let sentence = knownSentence(w);
+  if (!sentence && typeof OnlineWords !== 'undefined') {
+    btn.disabled = true;
+    btn.textContent = '⏳ Finding a sentence…';
+    try {
+      const found = await OnlineWords.within(OnlineWords.describeWords([w.word]), 15000, {});
+      const example = found[w.word]?.example;
+      if (example && new RegExp(`\\b${escapeRegex(w.word)}\\b`, 'i').test(example)) {
+        sentence = example;
+        rememberSentence(w.word, example);
+      }
+    } catch (e) { /* no sentence available */ }
+    // The player may have moved on to another word while we looked
+    if (!document.body.contains(btn)) return;
+    btn.disabled = false;
+    btn.textContent = '💬 Hear it in a sentence';
+  }
+  const shown = document.getElementById('spellSentenceText');
+  if (sentence) {
+    // On screen the word is blanked out, so the sentence helps without giving the spelling away
+    shown.textContent = '💬 ' + sentence.replace(new RegExp(`\\b${escapeRegex(w.word)}\\b`, 'gi'), '_____');
+    shown.hidden = false;
+    speakText(`${w.word}. ${sentence} ${w.word}.`, 0.8);
+  } else {
+    showToast('No sentence found for this word, so here it is again.');
+    speakText(`The word is ${w.word}. Spell ${w.word}.`, 0.8);
+  }
 }
 
 function paintSpellSlots() {
