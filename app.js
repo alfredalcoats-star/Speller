@@ -116,19 +116,79 @@ document.querySelectorAll('.grade-card').forEach(card => {
 
 /* ===================================================================
    GROWN-UPS' WORD LISTS
-   A list can be played like a grade. Each game uses the words it can:
-   Spell It works with plain words; matching and meaning games need meanings,
-   Missing Words needs sentences.
+   A list plays like a grade in every spelling game. Words with a meaning
+   or sentence use it; plain words get a spelling version of the same game:
+     Word Match      meaning ↔ word, or spoken word ↔ written word
+     Context Clues   meaning in a sentence, or "which spelling is right?"
+     Missing Words   word in a sentence, or the missing letters in the word
+     Spell It        hear it, build it from its own letters
    =================================================================== */
 const GAME_NEEDS = {
-  match:   { min: 3, ok: w => !!w.definition,      need: 'meanings' },
-  context: { min: 3, ok: w => !!w.contextChoices && !!w.contextSentence, need: 'meanings and sentences' },
-  missing: { min: 2, ok: w => !!w.sentence,        need: 'sentences' },
-  spell:   { min: 1, ok: () => true,               need: 'words' },
+  match:   { min: 2 },
+  context: { min: 1 },
+  missing: { min: 1 },
+  spell:   { min: 1 },
   // Comprehension games use reading texts for the chosen grade, not word lists
   think:   { gradeOnly: true },
   infer:   { gradeOnly: true },
 };
+
+/* Look-alike misspellings for "which spelling is right?" rounds */
+function misspellings(word, n = 3) {
+  const w = word.toLowerCase();
+  const vowels = 'aeiou';
+  const tries = [];
+  for (let i = 0; i < w.length - 1; i++) tries.push(w.slice(0, i) + w[i + 1] + w[i] + w.slice(i + 2));   // swap two letters
+  if (w.length > 3) for (let i = 1; i < w.length; i++) tries.push(w.slice(0, i) + w.slice(i + 1));      // leave one out
+  for (let i = 1; i < w.length; i++) {
+    if (!vowels.includes(w[i]) && /[a-z]/.test(w[i])) tries.push(w.slice(0, i + 1) + w[i] + w.slice(i + 1)); // double a consonant
+  }
+  for (let i = 0; i < w.length; i++) {
+    if (vowels.includes(w[i])) for (const v of vowels) if (v !== w[i]) tries.push(w.slice(0, i) + v + w.slice(i + 1)); // swap a vowel
+  }
+  [['ie', 'ei'], ['ei', 'ie'], ['ph', 'f'], ['ck', 'k'], ['c', 'k'], ['tion', 'shun'], ['ou', 'ow'], ['ee', 'ea'], ['ea', 'ee']]
+    .forEach(([a, b]) => { if (w.includes(a)) tries.push(w.replace(a, b)); });
+  if (w.endsWith('e') && w.length > 3) tries.push(w.slice(0, -1));
+  const out = [];
+  for (const t of shuffle(tries)) {
+    if (t && t !== w && !out.includes(t) && /[a-z]/.test(t)) out.push(t);
+    if (out.length >= n) break;
+  }
+  return out;
+}
+
+/* A gap in the word to fill in: the vowel sound if there is one, else one letter */
+function missingLetters(word) {
+  const w = word.toLowerCase();
+  const VOWEL_SETS = { 1: ['a', 'e', 'i', 'o', 'u'], 2: ['ai', 'ay', 'ea', 'ee', 'ei', 'ie', 'oa', 'oo', 'ou', 'ow', 'ue', 'au'] };
+  let at = -1, len = 0;
+  const m = [...w.matchAll(/[aeiou]{1,2}/g)].find(x => x.index > 0) || [...w.matchAll(/[aeiou]{1,2}/g)][0];
+  if (m && w.length > 1) { at = m.index; len = m[0].length; }
+  else { at = Math.min(1, w.length - 1); len = 1; }
+  const answer = w.slice(at, at + len);
+  const pool = /^[aeiou]+$/.test(answer) ? VOWEL_SETS[len] : 'bcdfghjklmnprstvwz'.split('');
+  const others = shuffle(pool.filter(x => x !== answer && w.slice(0, at) + x + w.slice(at + len) !== w)).slice(0, 3);
+  return {
+    shown: w.slice(0, at) + '_'.repeat(len) + w.slice(at + len),
+    answer,
+    choices: shuffle([answer, ...others]),
+  };
+}
+
+/* Ready-to-play rounds for a game, built from a list's words */
+function listRoundsFor(game, entries) {
+  return entries.map(e => {
+    if (game === 'context' && !(e.contextChoices && e.contextSentence)) {
+      const wrong = misspellings(e.word);
+      if (!wrong.length) return null;
+      const choices = shuffle([e.word.toLowerCase(), ...wrong]);
+      return { ...e, spellingCheck: true, contextQuestion: '🔊 Listen. Which word is spelled correctly?',
+        contextChoices: choices, contextAnswer: choices.indexOf(e.word.toLowerCase()) };
+    }
+    if (game === 'missing' && !e.sentence) return { ...e, letterGap: missingLetters(e.word) };
+    return e;
+  }).filter(Boolean);
+}
 
 function listEntries(list) {
   const builtInDefs = Object.values(GRADE_WORDS).flat().map(w => w.definition);
@@ -158,7 +218,7 @@ function renderHomeLists() {
 }
 
 function openListsScreen() {
-  WordLists.mountEditor(document.getElementById('listEditor'), { onChange: renderHomeLists });
+  WordLists.mountEditor(document.getElementById('listEditor'), { onChange: renderHomeLists, onPlay: selectList });
   showScreen('listsScreen');
 }
 
@@ -179,13 +239,13 @@ function setGameAvailability(entries) {
   document.querySelector('.online-bar').style.display = entries ? 'none' : '';
   document.querySelectorAll('.game-sel-card').forEach(card => {
     const need = GAME_NEEDS[card.dataset.game];
-    const enough = !entries || (!need.gradeOnly && entries.filter(need.ok).length >= need.min);
+    const enough = !entries || (!need.gradeOnly && listRoundsFor(card.dataset.game, entries).length >= need.min);
     card.classList.toggle('gsc-disabled', !enough);
     card.querySelector('.gsc-note')?.remove();
     if (!enough) {
       card.insertAdjacentHTML('beforeend', need.gradeOnly
         ? '<div class="gsc-note">Pick a grade on the home page to play this game</div>'
-        : `<div class="gsc-note">Needs ${need.min}+ words with ${need.need} — add them in 📝 My Lists</div>`);
+        : `<div class="gsc-note">Add at least ${need.min} words to this list in My Word Lists</div>`);
     }
   });
 }
@@ -199,7 +259,8 @@ function wordsForGame(game) {
     const list = WordLists.get(state.currentList);
     const entries = list ? listEntries(list) : [];
     state.distractorPool = entries.map(e => e.word);
-    return shuffle(entries.filter(GAME_NEEDS[game].ok)).slice(0, 8);
+    // Every word on the list gets practiced (up to 20); Word Match keeps 8 pairs so it fits on screen
+    return shuffle(listRoundsFor(game, entries)).slice(0, game === 'match' ? 8 : 20);
   }
   state.distractorPool = null;
   return buildWordSet(state.currentGrade);
@@ -210,7 +271,7 @@ document.querySelectorAll('.game-sel-card').forEach(card => {
   card.addEventListener('click', () => {
     if (!state.currentGrade && !state.currentList) { showToast('Pick a grade or a word list first! 📚'); showScreen('homeScreen'); return; }
     if (card.classList.contains('gsc-disabled')) {
-      showToast(GAME_NEEDS[card.dataset.game].gradeOnly ? 'Pick a grade to play this game! 📚' : 'This list needs more meanings or sentences for that game.');
+      showToast(GAME_NEEDS[card.dataset.game].gradeOnly ? 'Pick a grade to play this game! 📚' : 'Add a few more words to this list first.');
       return;
     }
     state.currentGame = card.dataset.game;
@@ -362,25 +423,30 @@ function buildMatchGame() {
   state.matchState = { selectedWord: null, selectedDef: null, matched: new Set() };
   const words = state.words;
 
-  const wordItems = shuffle(words.map(w => ({ id: w.word, label: w.word + webBadge(w) })));
-  const defItems  = shuffle(words.map(w => ({ id: w.word, label: w.definition })));
+  // Plain list words have no meaning to match, so the child matches the word they HEAR
+  const anyAudio = words.some(w => !w.definition);
+  const wordItems = shuffle(words.map((w, i) => ({ id: i, label: escapeHtml(w.word) + webBadge(w) })));
+  const defItems  = shuffle(words.map((w, i) => ({ id: i, audio: !w.definition,
+    label: w.definition ? escapeHtml(w.definition) : '<span class="match-listen">🔊 Listen</span>' })));
 
   document.getElementById('gameArea').innerHTML = `
-    <p class="match-intro">🐝 Click a <strong>word</strong> on the left, then click its <strong>matching definition</strong> on the right!</p>
+    <p class="match-intro">🐝 Click a <strong>word</strong> on the left, then click its <strong>match</strong> on the right!${
+      anyAudio ? ' Tap 🔊 to hear a word.' : ''}</p>
     <div class="match-grid">
       <div>
         <div class="match-col-label">📝 Words</div>
-        ${wordItems.map(w => `<div class="match-item" data-id="${w.id}" data-type="word">${w.label}</div>`).join('')}
+        ${wordItems.map(w => `<div class="match-item" data-id="${w.id}" data-type="word" tabindex="0" role="button">${w.label}</div>`).join('')}
       </div>
       <div>
-        <div class="match-col-label">📖 Definitions</div>
-        ${defItems.map(d => `<div class="match-item" data-id="${d.id}" data-type="def">${d.label}</div>`).join('')}
+        <div class="match-col-label">${anyAudio ? (words.every(w => !w.definition) ? '🔊 Spoken words' : '📖 Meanings & 🔊 spoken words') : '📖 Definitions'}</div>
+        ${defItems.map(d => `<div class="match-item ${d.audio ? 'audio' : ''}" data-id="${d.id}" data-type="def" tabindex="0" role="button">${d.label}</div>`).join('')}
       </div>
     </div>
   `;
 
   document.querySelectorAll('.match-item').forEach(el => {
     el.addEventListener('click', handleMatchClick);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); } });
   });
 }
 
@@ -396,6 +462,7 @@ function handleMatchClick(e) {
     ms.selectedWord = el;
     el.classList.add('selected');
   } else {
+    if (el.classList.contains('audio')) speakText(state.words[+el.dataset.id].word);
     if (ms.selectedDef) ms.selectedDef.classList.remove('selected');
     ms.selectedDef = el;
     el.classList.add('selected');
@@ -454,10 +521,12 @@ function buildContextRound() {
   const w = state.words[state.round];
   setProgress(state.round / state.words.length);
 
-  const sentenceHighlighted = w.contextSentence.replace(
-    new RegExp(`\\b${escapeRegex(w.word)}\\b`, 'i'),
-    match => `<span class="highlight-word">${match}</span>`
-  );
+  const sentenceHighlighted = w.spellingCheck
+    ? `<button class="spell-hear" id="hearCtx">🔊 Hear the word</button>${w.definition ? `<p class="spell-meaning">💡 ${escapeHtml(w.definition)}</p>` : ''}`
+    : w.contextSentence.replace(
+      new RegExp(`\\b${escapeRegex(w.word)}\\b`, 'i'),
+      match => `<span class="highlight-word">${match}</span>`
+    );
 
   const choicesHtml = w.contextChoices.map((text, i) => `
     <button class="choice-btn" data-index="${i}" data-correct="${i === w.contextAnswer}">
@@ -469,7 +538,7 @@ function buildContextRound() {
   document.getElementById('gameArea').innerHTML = `
     <div class="context-card">
       <div class="round-label">🔍 Round ${state.round + 1} of ${state.words.length}${w.source ? ' · 🌐 fresh word' : ''}</div>
-      <div class="context-sentence-box">${sentenceHighlighted}</div>
+      <div class="context-sentence-box ${w.spellingCheck ? 'spelling-check' : ''}">${sentenceHighlighted}</div>
       <div class="context-question">${w.contextQuestion}</div>
       <div class="context-choices">${choicesHtml}</div>
       <div class="feedback-box" id="ctxFeedback"></div>
@@ -479,6 +548,10 @@ function buildContextRound() {
   document.querySelectorAll('.choice-btn').forEach(btn => {
     btn.addEventListener('click', handleContextChoice);
   });
+  if (w.spellingCheck) {
+    document.getElementById('hearCtx').addEventListener('click', () => speakText(w.word));
+    setTimeout(() => speakText(w.word), 300);
+  }
 }
 
 function handleContextChoice(e) {
@@ -520,6 +593,7 @@ function handleContextChoice(e) {
    =================================================================== */
 function buildMissingRound() {
   if (state.round >= state.words.length) { showResult(); return; }
+  if (state.words[state.round].letterGap) { buildLetterGapRound(); return; }
 
   const w           = state.words[state.round];
   const distractors = getDistractors(state.words, state.round, 3);
@@ -584,6 +658,49 @@ function handleMissingChoice(e) {
   document.getElementById('nextMsBtn').addEventListener('click', buildMissingRound);
 }
 
+/* Missing letters: "fr__nd" → pick "ie" (for list words without a sentence) */
+function buildLetterGapRound() {
+  const w = state.words[state.round];
+  const gap = w.letterGap;
+  setProgress(state.round / state.words.length);
+  document.getElementById('gameArea').innerHTML = `
+    <div class="missing-card">
+      <div class="round-label">✏️ Round ${state.round + 1} of ${state.words.length}</div>
+      <p class="letter-gap-prompt">Which letters are missing? <button class="spell-hint" id="hearGap">🔊 Hear the word</button></p>
+      <div class="missing-sentence letter-gap">${escapeHtml(gap.shown).replace(/_+/, m => `<span class="missing-blank">${'_'.repeat(m.length)}</span>`)}</div>
+      <div class="word-choices">
+        ${gap.choices.map(c => `<button class="word-chip" data-chunk="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('')}
+      </div>
+      <div class="feedback-box" id="msFeedback"></div>
+    </div>`;
+  document.getElementById('hearGap').addEventListener('click', () => speakText(w.word));
+  setTimeout(() => speakText(w.word), 300);
+  document.querySelectorAll('.word-chip').forEach(btn => btn.addEventListener('click', () => {
+    const right = btn.dataset.chunk === gap.answer;
+    document.querySelectorAll('.word-chip').forEach(b => {
+      b.disabled = true;
+      if (b.dataset.chunk === gap.answer) b.classList.add('correct');
+    });
+    document.querySelector('.letter-gap').textContent = w.word;
+    if (right) {
+      btn.classList.add('correct');
+      state.score++;
+      updateScoreDisplay();
+      showToast(`✅ "${w.word}" is right!`, 'correct');
+    } else {
+      btn.classList.add('incorrect');
+      showToast(`❌ It's spelled "${w.word}"`, 'wrong');
+    }
+    document.getElementById('msFeedback').innerHTML = `<span class="feedback-text ${right ? 'correct' : 'wrong'}">${
+      right ? `🎉 Yes! ${escapeHtml(w.word)}` : `The missing letters are "${escapeHtml(gap.answer)}": ${escapeHtml(w.word)}`}</span>`;
+    speakText(w.word);
+    state.round++;
+    const isLast = state.round >= state.words.length;
+    document.getElementById('msFeedback').innerHTML += `<button class="next-btn" id="nextMsBtn">${isLast ? '🏆 See Results' : 'Next Word →'}</button>`;
+    document.getElementById('nextMsBtn').addEventListener('click', buildMissingRound);
+  }));
+}
+
 function getDistractors(words, currentIdx, count) {
   // Lists can be short, so draw from the whole list (and built-in words as a last resort)
   const answer = words[currentIdx].word;
@@ -613,9 +730,9 @@ function buildSpellRound() {
   setProgress(state.round / state.words.length);
 
   const target = w.word.toLowerCase().split('');
-  const extraCount = Math.min(4, Math.max(2, Math.ceil(target.length / 3)));
-  const extras = shuffle('abcdefghijklmnopqrstuvwxyz'.split('').filter(c => !target.includes(c))).slice(0, extraCount);
-  const bank = shuffle([...target, ...extras]);
+  // Only the letters in the word, scrambled (never already in the right order)
+  let bank = shuffle([...target]);
+  for (let tries = 0; tries < 10 && target.length > 1 && bank.join('') === target.join(''); tries++) bank = shuffle([...target]);
   state.spell = { target, built: [], tries: 0, done: false };
 
   document.getElementById('gameArea').innerHTML = `
@@ -628,7 +745,7 @@ function buildSpellRound() {
       ${w.definition ? `<p class="spell-meaning">💡 ${w.definition}</p>` : ''}
       <div class="spell-slots" id="spellSlots">${target.map(() => '<span class="spell-slot"></span>').join('')}</div>
       <div class="spell-bank" id="spellBank">${bank.map((t, k) =>
-        `<button class="spell-tile" data-k="${k}" data-t="${t}">${t}</button>`).join('')}</div>
+        `<button class="spell-tile" data-k="${k}" data-t="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('')}</div>
       <div class="spell-actions">
         <button class="btn-outline" id="spellUndo">⌫ Undo</button>
         <button class="btn-primary" id="spellCheck">✔ Check</button>
@@ -708,8 +825,8 @@ document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey || state.spell?.done) return;
   if (e.key === 'Backspace') { e.preventDefault(); undoSpellTile(); return; }
   if (e.key === 'Enter') { e.preventDefault(); checkSpelling(); return; }
-  const tile = /^[a-z]$/i.test(e.key) &&
-    document.querySelector(`#spellBank .spell-tile[data-t="${e.key.toLowerCase()}"]:not(:disabled)`);
+  const tile = /^[a-z'-]$/i.test(e.key) &&
+    [...document.querySelectorAll('#spellBank .spell-tile:not(:disabled)')].find(t => t.dataset.t === e.key.toLowerCase());
   if (tile) addSpellTile(tile);
 });
 

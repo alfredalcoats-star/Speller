@@ -623,6 +623,13 @@ function soundBoxes(parts, chunky = false) {
   return boxes.join('');
 }
 
+/* Only the word's own tiles, scrambled so they never start in the right order */
+function scrambled(tiles) {
+  let bank = shuffle([...tiles]);
+  for (let n = 0; n < 10 && tiles.length > 1 && bank.join('|') === tiles.join('|'); n++) bank = shuffle([...tiles]);
+  return bank;
+}
+
 /* Tiles a child taps to spell a word (magic-e words get a trailing e) */
 function spellTiles(parts) {
   const tiles = parts.map(g => g.includes('_') ? g[0] : g);
@@ -786,10 +793,6 @@ function stepSpell() {
     ...shuffle(L.level.words.map(w => toWordObj(w, L.level.id))).slice(0, L.cfg.spell - web.length),
     ...web,
   ]);
-  const allTiles = [...new Set([
-    ...L.level.words.flatMap(w => spellTiles(w[2].split('|'))),
-    ...web.flatMap(w => spellTiles(w.parts)),
-  ])];
   let i = 0;
 
   activityShell('spell', L.level.chunks
@@ -801,8 +804,7 @@ function stepSpell() {
     if (i >= items.length) { L.next(); return; }
     const w = items[i];
     const target = spellTiles(w.parts);
-    const extras = shuffle(allTiles.filter(t => !target.includes(t))).slice(0, 3);
-    const bank = shuffle([...target, ...extras]);
+    const bank = scrambled(target);
     let built = [];
     let firstTry = true;
 
@@ -1166,9 +1168,7 @@ function stepList() {
       $('#listRead').remove();
       $('#listWord').classList.add('hidden-word');
       const target = w.word.toLowerCase().split('');
-      const extras = shuffle('abcdefghijklmnopqrstuvwxyz'.split('').filter(c => !target.includes(c)))
-        .slice(0, Math.min(4, Math.max(2, Math.ceil(target.length / 3))));
-      const bank = shuffle([...target, ...extras]);
+      const bank = scrambled(target);
       let built = [];
       let tries = 0;
       $('#listSpell').innerHTML = `

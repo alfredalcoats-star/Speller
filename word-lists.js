@@ -125,7 +125,7 @@ const WordLists = (() => {
   /* ===================================================================
      EDITOR — the same "My Word Lists" manager on both pages
      =================================================================== */
-  function mountEditor(container, { onChange } = {}) {
+  function mountEditor(container, { onChange, onPlay } = {}) {
     let editingId = null;
     const canFill = typeof OnlineWords !== 'undefined';
 
@@ -139,6 +139,7 @@ const WordLists = (() => {
               return `<div class="wl-item">
                 <div class="wl-item-text"><b>${esc(l.name)}</b>
                   <small>${c.words} word${c.words === 1 ? '' : 's'} · ${c.meanings} with meanings · ${c.sentences} with sentences</small></div>
+                ${onPlay ? `<button type="button" class="btn-primary wl-small" data-wl-play="${l.id}">▶ Play</button>` : ''}
                 <button type="button" class="btn-outline wl-small" data-wl-edit="${l.id}">✏️ Edit</button>
                 <button type="button" class="btn-outline wl-small" data-wl-del="${l.id}" aria-label="Delete ${esc(l.name)}">🗑</button>
               </div>`;
@@ -153,7 +154,7 @@ const WordLists = (() => {
               <textarea name="words" rows="10" spellcheck="false" placeholder="friend&#10;because&#10;brave | ready to face danger | The brave firefighter ran inside."></textarea>
             </label>
             <p class="wl-help">One word per line, or paste words separated by commas. To add a meaning and an example sentence, use bars:
-              <code>word | meaning | sentence</code>. Plain words work for spelling and reading. Meanings unlock the matching and meaning games.</p>
+              <code>word | meaning | sentence</code>. Plain words work in every spelling game. Meanings and sentences add meaning and fill-in-the-blank rounds.</p>
             <div class="wl-buttons">
               <button type="submit" class="btn-primary">💾 Save list</button>
               ${canFill ? '<button type="button" class="btn-secondary" id="wlFill">✨ Fill in missing meanings</button>' : ''}
@@ -176,6 +177,7 @@ const WordLists = (() => {
       };
 
       container.querySelector('#wlNew').addEventListener('click', () => open(null));
+      container.querySelectorAll('[data-wl-play]').forEach(b => b.addEventListener('click', () => onPlay(b.dataset.wlPlay)));
       container.querySelectorAll("[data-wl-edit]").forEach(b => b.addEventListener('click', () => open(get(b.dataset.wlEdit))));
       container.querySelectorAll("[data-wl-del]").forEach(b => b.addEventListener('click', async () => {
         const list = get(b.dataset.wlDel);
@@ -193,7 +195,9 @@ const WordLists = (() => {
         render();
         const note = container.querySelector('.wl-lists');
         note.insertAdjacentHTML('afterbegin', `<p class="wl-saved">✅ Saved "${esc(result.list.name)}" with ${result.list.words.length} words.${
-          result.problems.length ? ' ' + esc(result.problems.join(' ')) : ''}</p>`);
+          result.problems.length ? ' ' + esc(result.problems.join(' ')) : ''}${
+          onPlay ? ` <button type="button" class="btn-primary wl-small" id="wlPlaySaved">▶ Play these words</button>` : ''}</p>`);
+        container.querySelector('#wlPlaySaved')?.addEventListener('click', () => onPlay(result.list.id));
         onChange?.();
       });
 
