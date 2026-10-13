@@ -11,7 +11,8 @@ const state = {
   total: 0,
   round: 0,
   online: {},          // grade -> fresh words fetched from the internet
-  currentList: null,   // id of a grown-up's word list being played (instead of a grade)
+  currentList: null,   // id of the grown-up's word list in use
+  source: 'random',    // which words the spelling games use: 'list' | 'random' | 'mixed'
   matchState: {
     selectedWord: null,
     selectedDef:  null,
@@ -36,7 +37,7 @@ function showScreen(id) {
 document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.dataset.view === 'home')  showScreen('homeScreen');
-    if (btn.dataset.view === 'games') showScreen('gamesScreen');
+    if (btn.dataset.view === 'games') openGames();
     if (btn.dataset.view === 'lists') openListsScreen();
   });
 });
@@ -88,29 +89,23 @@ function buildWordSet(grade) {
   return shuffle([...builtIn.slice(0, 8 - fresh.length), ...fresh]);
 }
 
-const webBadge = w => w.source ? ' <span class="web-badge" title="Fresh word from the internet">🌐</span>' : '';
+const webBadge = w => w.source ? ' <span class="web-badge" title="Fresh word from the internet">🌐</span>'
+  : w.custom && state.source === 'mixed' ? ' <span class="web-badge" title="From your word list">📝</span>' : '';
+const roundTag = w => w.source ? ' · 🌐 fresh word' : w.custom && state.source === 'mixed' ? ' · 📝 your word' : '';
 
 const onlineToggle = document.getElementById('onlineToggle');
 onlineToggle.checked = onlineEnabled();
 onlineToggle.addEventListener('change', () => {
   try { localStorage.setItem(ONLINE_KEY, onlineToggle.checked ? 'on' : 'off'); } catch (e) { /* ignore */ }
-  if (state.currentGrade) fetchOnlineWords(state.currentGrade);
+  if (state.currentGrade && state.source !== 'list') fetchOnlineWords(state.currentGrade);
   showOnlineStatus(state.currentGrade);
 });
 
 /* ===== GRADE CARDS ===== */
 document.querySelectorAll('.grade-card').forEach(card => {
   card.addEventListener('click', () => {
-    const grade = card.dataset.grade;
-    state.currentGrade = grade;
-    state.currentList = null;
-    setGameAvailability(null);
-    fetchOnlineWords(grade);
-    const label = grade === 'K' ? 'Kindergarten' : `Grade ${grade}`;
-    document.getElementById('gradeTitle').textContent = `${label} — Choose a Game`;
-    document.querySelector('#gamesScreen .screen-sub').textContent =
-      `${label} spelling words are loaded! Pick your game.`;
-    showScreen('gamesScreen');
+    state.currentGrade = card.dataset.grade;
+    openGames({ source: savedSource() === 'mixed' && WordLists.all().length ? 'mixed' : 'random' });
   });
 });
 
@@ -223,57 +218,133 @@ function openListsScreen() {
 }
 
 function selectList(id) {
-  const list = WordLists.get(id);
-  if (!list) { renderHomeLists(); return; }
+  if (!WordLists.get(id)) { renderHomeLists(); return; }
   state.currentList = id;
-  state.currentGrade = null;
-  document.getElementById('gradeTitle').textContent = `${list.name} — Choose a Game`;
-  document.querySelector('#gamesScreen .screen-sub').textContent =
-    `Your ${list.words.length} words are loaded! Pick your game.`;
-  setGameAvailability(listEntries(list));
+  openGames({ source: 'list' });
+}
+
+/* ===================================================================
+   WORD SOURCE — My word list / Random words / Mixed
+   =================================================================== */
+const SOURCE_KEY = 'spellinghive.wordSource';
+function savedSource() {
+  try { return localStorage.getItem(SOURCE_KEY) || 'random'; } catch (e) { return 'random'; }
+}
+const gradeName = g => g === 'K' ? 'Kindergarten' : `Grade ${g}`;
+
+/* A sensible grade when none was picked: the Reading Boost reader's grade, else Grade 3 */
+function defaultGrade() {
+  try {
+    const rb = JSON.parse(localStorage.getItem('readingBoost.v1'));
+    const p = rb && (rb.profiles[rb.activeId] || Object.values(rb.profiles)[0]);
+    if (p && GRADE_WORDS[p.grade]) return String(p.grade);
+  } catch (e) { /* ignore */ }
+  return '3';
+}
+
+function openGames({ source } = {}) {
+  const lists = WordLists.all();
+  if (!state.currentGrade) state.currentGrade = defaultGrade();
+  if (!lists.some(l => l.id === state.currentList)) state.currentList = lists[0]?.id || null;
+  state.source = source || state.source || savedSource();
+  if (!state.currentList && state.source !== 'random') state.source = 'random';
+  renderGamesScreen();
   showScreen('gamesScreen');
 }
 
-/* Grey out games a list doesn't have enough meanings or sentences for */
-function setGameAvailability(entries) {
-  document.querySelector('.online-bar').style.display = entries ? 'none' : '';
+function setSource(source) {
+  state.source = source;
+  try { localStorage.setItem(SOURCE_KEY, source); } catch (e) { /* ignore */ }
+  renderGamesScreen();
+}
+
+function renderGamesScreen() {
+  const lists = WordLists.all();
+  const list = WordLists.get(state.currentList);
+  const grade = state.currentGrade;
+  const src = state.source;
+
+  // Chooser buttons
+  document.querySelectorAll('.source-btn').forEach(b => {
+    const needsList = b.dataset.source !== 'random';
+    b.disabled = needsList && !lists.length;
+    b.classList.toggle('on', b.dataset.source === src);
+    b.setAttribute('aria-checked', b.dataset.source === src);
+  });
+  const listSel = document.getElementById('sourceList');
+  listSel.innerHTML = lists.map(l => `<option value="${l.id}">${escapeHtml(l.name)} (${l.words.length})</option>`).join('');
+  if (list) listSel.value = list.id;
+  document.getElementById('sourceGrade').value = grade;
+  document.getElementById('sourceListWrap').hidden = src === 'random';
+  document.getElementById('sourceGradeWrap').hidden = src === 'list';
+  document.getElementById('sourceHint').innerHTML = !lists.length
+    ? 'Want to practice your own words? <button type="button" class="link-inline" id="makeListLink">Make a word list</button>'
+    : src === 'mixed' ? `About half the words come from "${escapeHtml(list.name)}" and half are random ${gradeName(grade)} words.`
+    : src === 'list' ? `Every word on "${escapeHtml(list.name)}" is practiced.`
+    : `Random ${gradeName(grade)} words, different every time.`;
+  document.getElementById('makeListLink')?.addEventListener('click', openListsScreen);
+
+  // Title and intro
+  document.getElementById('gradeTitle').textContent =
+    src === 'list' ? `${list.name} — Choose a Game`
+    : src === 'mixed' ? `${list.name} + ${gradeName(grade)}`
+    : `${gradeName(grade)} — Choose a Game`;
+  document.querySelector('#gamesScreen .screen-sub').textContent =
+    src === 'list' ? `Your ${list.words.length} words are ready. Pick a game!`
+    : src === 'mixed' ? 'Your words and new grade-level words, mixed together. Pick a game!'
+    : `${gradeName(grade)} spelling words are ready. Pick a game!`;
+
+  // Fresh internet words only apply to the random grade-level words
+  document.querySelector('.online-bar').hidden = src === 'list';
+  if (src !== 'list') fetchOnlineWords(grade);
+
+  // Every game works with any source; a list just needs enough words
+  const entries = list ? listEntries(list) : [];
   document.querySelectorAll('.game-sel-card').forEach(card => {
-    const need = GAME_NEEDS[card.dataset.game];
-    const enough = !entries || (!need.gradeOnly && listRoundsFor(card.dataset.game, entries).length >= need.min);
+    const game = card.dataset.game;
+    const need = GAME_NEEDS[game];
+    const enough = need.gradeOnly || src !== 'list' || listRoundsFor(game, entries).length >= need.min;
     card.classList.toggle('gsc-disabled', !enough);
     card.querySelector('.gsc-note')?.remove();
-    if (!enough) {
-      card.insertAdjacentHTML('beforeend', need.gradeOnly
-        ? '<div class="gsc-note">Pick a grade on the home page to play this game</div>'
-        : `<div class="gsc-note">Add at least ${need.min} words to this list in My Word Lists</div>`);
-    }
+    if (!enough) card.insertAdjacentHTML('beforeend', `<div class="gsc-note">Add at least ${need.min} words to this list in My Word Lists</div>`);
   });
 }
+
+document.querySelectorAll('.source-btn').forEach(b => b.addEventListener('click', () => setSource(b.dataset.source)));
+document.getElementById('sourceList').addEventListener('change', e => { state.currentList = e.target.value; renderGamesScreen(); });
+document.getElementById('sourceGrade').addEventListener('change', e => { state.currentGrade = e.target.value; renderGamesScreen(); });
 
 /* The words for one round of a game, from a grade or a grown-up's list */
 function wordsForGame(game) {
   if (game === 'think' || game === 'infer') {
     return Comprehension.pick(Comprehension.bandFor(state.currentGrade), 8, game === 'infer' ? 'infer' : null);
   }
-  if (state.currentList) {
-    const list = WordLists.get(state.currentList);
-    const entries = list ? listEntries(list) : [];
-    state.distractorPool = entries.map(e => e.word);
+  const list = state.source !== 'random' ? WordLists.get(state.currentList) : null;
+  const listRounds = list ? shuffle(listRoundsFor(game, listEntries(list))) : [];
+  if (state.source === 'list' && list) {
+    state.distractorPool = list.words.map(w => w.word);
     // Every word on the list gets practiced (up to 20); Word Match keeps 8 pairs so it fits on screen
-    return shuffle(listRoundsFor(game, entries)).slice(0, game === 'match' ? 8 : 20);
+    return listRounds.slice(0, game === 'match' ? 8 : 20);
+  }
+  const gradeWords = buildWordSet(state.currentGrade);
+  if (state.source === 'mixed' && list) {
+    // About half from the list, the rest random grade-level words
+    const total = game === 'match' ? 8 : 10;
+    const mine = listRounds.slice(0, Math.ceil(total / 2));
+    const taken = new Set(mine.map(w => w.word.toLowerCase()));
+    const others = gradeWords.filter(w => !taken.has(w.word.toLowerCase())).slice(0, total - mine.length);
+    state.distractorPool = [...list.words.map(w => w.word), ...others.map(w => w.word)];
+    return shuffle([...mine, ...others]);
   }
   state.distractorPool = null;
-  return buildWordSet(state.currentGrade);
+  return gradeWords;
 }
 
 /* ===== GAME CARDS ===== */
 document.querySelectorAll('.game-sel-card').forEach(card => {
   card.addEventListener('click', () => {
-    if (!state.currentGrade && !state.currentList) { showToast('Pick a grade or a word list first! 📚'); showScreen('homeScreen'); return; }
-    if (card.classList.contains('gsc-disabled')) {
-      showToast(GAME_NEEDS[card.dataset.game].gradeOnly ? 'Pick a grade to play this game! 📚' : 'Add a few more words to this list first.');
-      return;
-    }
+    if (!state.currentGrade) state.currentGrade = defaultGrade();
+    if (card.classList.contains('gsc-disabled')) { showToast('Add a few more words to this list first.'); return; }
     state.currentGame = card.dataset.game;
     state.words = wordsForGame(card.dataset.game);
     startGame(card.dataset.game);
@@ -537,7 +608,7 @@ function buildContextRound() {
 
   document.getElementById('gameArea').innerHTML = `
     <div class="context-card">
-      <div class="round-label">🔍 Round ${state.round + 1} of ${state.words.length}${w.source ? ' · 🌐 fresh word' : ''}</div>
+      <div class="round-label">🔍 Round ${state.round + 1} of ${state.words.length}${roundTag(w)}</div>
       <div class="context-sentence-box ${w.spellingCheck ? 'spelling-check' : ''}">${sentenceHighlighted}</div>
       <div class="context-question">${w.contextQuestion}</div>
       <div class="context-choices">${choicesHtml}</div>
@@ -608,7 +679,7 @@ function buildMissingRound() {
 
   document.getElementById('gameArea').innerHTML = `
     <div class="missing-card">
-      <div class="round-label">✏️ Round ${state.round + 1} of ${state.words.length}${w.source ? ' · 🌐 fresh word' : ''}</div>
+      <div class="round-label">✏️ Round ${state.round + 1} of ${state.words.length}${roundTag(w)}</div>
       <div class="missing-sentence">${sentenceHtml}</div>
       <div class="word-choices">
         ${choices.map(c => `<button class="word-chip" data-word="${c}">${c}</button>`).join('')}
@@ -665,7 +736,7 @@ function buildLetterGapRound() {
   setProgress(state.round / state.words.length);
   document.getElementById('gameArea').innerHTML = `
     <div class="missing-card">
-      <div class="round-label">✏️ Round ${state.round + 1} of ${state.words.length}</div>
+      <div class="round-label">✏️ Round ${state.round + 1} of ${state.words.length}${roundTag(w)}</div>
       <p class="letter-gap-prompt">Which letters are missing? <button class="spell-hint" id="hearGap">🔊 Hear the word</button></p>
       <div class="missing-sentence letter-gap">${escapeHtml(gap.shown).replace(/_+/, m => `<span class="missing-blank">${'_'.repeat(m.length)}</span>`)}</div>
       <div class="word-choices">
@@ -737,7 +808,7 @@ function buildSpellRound() {
 
   document.getElementById('gameArea').innerHTML = `
     <div class="missing-card spell-card">
-      <div class="round-label">🎧 Round ${state.round + 1} of ${state.words.length}${w.source ? ' · 🌐 fresh word' : ''}</div>
+      <div class="round-label">🎧 Round ${state.round + 1} of ${state.words.length}${roundTag(w)}</div>
       <div class="spell-listen">
         <button class="spell-hear" id="spellHear">🔊 Hear the word</button>
         ${w.contextSentence ? '<button class="spell-hint" id="spellSentence">💬 Hear it in a sentence</button>' : ''}

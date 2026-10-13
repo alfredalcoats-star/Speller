@@ -312,6 +312,35 @@
 
     <p class="screen-sub">Pick a game and start practicing your spelling words!</p>
 
+    <section class="source-bar" aria-label="Which words to practice">
+      <div class="source-label">Practice with</div>
+      <div class="source-modes" role="radiogroup" aria-label="Word source">
+        <button type="button" class="source-btn" role="radio" data-source="list">
+          <b>📝 My word list</b><small>Only your saved words</small>
+        </button>
+        <button type="button" class="source-btn" role="radio" data-source="random">
+          <b>🎲 Random words</b><small>Grade-level words</small>
+        </button>
+        <button type="button" class="source-btn" role="radio" data-source="mixed">
+          <b>🔀 Mixed</b><small>Your list + random words</small>
+        </button>
+      </div>
+      <div class="source-pickers">
+        <label class="source-pick" id="sourceListWrap">Word list
+          <select id="sourceList"></select>
+        </label>
+        <label class="source-pick" id="sourceGradeWrap">Grade
+          <select id="sourceGrade">
+            <option value="K">Kindergarten</option>
+            <option value="1">Grade 1</option><option value="2">Grade 2</option><option value="3">Grade 3</option>
+            <option value="4">Grade 4</option><option value="5">Grade 5</option><option value="6">Grade 6</option>
+            <option value="7">Grade 7</option><option value="8">Grade 8</option>
+          </select>
+        </label>
+      </div>
+      <p class="source-hint" id="sourceHint" role="status"></p>
+    </section>
+
     <div class="online-bar">
       <label class="online-toggle">
         <input type="checkbox" id="onlineToggle" />

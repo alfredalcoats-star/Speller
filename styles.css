@@ -1533,3 +1533,30 @@ body {
 .letter-gap-prompt { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; font-weight: 800; margin-bottom: 8px; }
 .letter-gap { letter-spacing: 0.12em; font-size: 2.2rem; text-align: center; }
 .wl-saved .wl-small { margin-left: 8px; }
+
+/* ===== Word source chooser (games screen) ===== */
+.source-bar {
+  display: grid; gap: 12px; margin: 4px 0 20px;
+  background: var(--white); border: 1.5px solid var(--line, #DDE2F0); border-radius: 18px; padding: 16px 18px;
+}
+.source-label { font-weight: 900; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-light); }
+.source-modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.source-btn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+  font-family: 'Nunito', sans-serif; color: var(--text-dark); cursor: pointer;
+  background: var(--cream-2); border: 2px solid transparent; border-radius: 14px; padding: 12px 14px;
+}
+.source-btn b { font-size: 1rem; }
+.source-btn small { color: var(--text-mid); font-weight: 700; }
+.source-btn:hover:not(:disabled) { border-color: var(--text-light); }
+.source-btn.on { background: var(--honey-light); border-color: var(--honey-dark); }
+.source-btn:disabled { opacity: .45; cursor: not-allowed; }
+.source-pickers { display: flex; flex-wrap: wrap; gap: 12px; }
+.source-pick { display: grid; gap: 4px; font-weight: 800; font-size: .9rem; color: var(--text-mid); min-width: 200px; flex: 1; }
+.source-pick select {
+  font: inherit; font-size: 1rem; font-weight: 800; color: var(--text-dark);
+  padding: 10px 12px; border-radius: 12px; border: 2px solid var(--line, #DDE2F0); background: var(--white);
+}
+.source-hint { color: var(--text-mid); font-weight: 700; font-size: .92rem; }
+.link-inline { background: none; border: none; padding: 0; font: inherit; color: var(--blue); text-decoration: underline; cursor: pointer; font-weight: 800; }
+@media (max-width: 640px) { .source-modes { grid-template-columns: 1fr; } }
