@@ -980,7 +980,7 @@ async function singWord(w, btn) {
     if (my !== sing.token) return;
     const ch = letters[i];
     if (!/[a-z]/i.test(ch)) { tiles[i].classList.add('lit'); continue; }   // apostrophes and hyphens are shown, not said
-    // Say the letter's NAME ("eff", "are"…): a lone letter is often skipped or misread
+    // Say the letter itself, as a capital, so the voice uses its real name
     await sayPart(letterName(ch), speed.rate, () => {
       if (my !== sing.token) return;
       tiles.forEach(t => t.classList.remove('now'));

@@ -48,17 +48,14 @@ function askConfirm(message, { confirmLabel = 'Yes', cancelLabel = 'Cancel', dan
 }
 
 /* ===================================================================
-   Speaking letters. A lone letter is unreliable with computer voices
-   (some skip it, some read "A" as "uh"), so letters are spoken by name.
+   Speaking letters. Each letter is sent to the voice as a single CAPITAL
+   letter ("E", "I"), which every built-in voice reads as the letter's own
+   name. (Made-up spellings like "ee" or "eye" were read wrong by some voices.)
    =================================================================== */
-const LETTER_NAMES = {
-  a: 'ay', b: 'bee', c: 'see', d: 'dee', e: 'ee', f: 'eff', g: 'gee', h: 'aitch', i: 'eye',
-  j: 'jay', k: 'kay', l: 'ell', m: 'em', n: 'en', o: 'oh', p: 'pee', q: 'cue', r: 'are',
-  s: 'ess', t: 'tee', u: 'you', v: 'vee', w: 'double-you', x: 'ex', y: 'why', z: 'zee',
-};
-function letterName(ch) { return LETTER_NAMES[String(ch).toLowerCase()] || ''; }
-/** "cat" -> "see, ay, tee" (apostrophes and hyphens are left out) */
-function spellOut(word) { return [...String(word)].map(letterName).filter(Boolean).join(', '); }
+function letterName(ch) { return /^[a-z]$/i.test(ch) ? String(ch).toUpperCase() : ''; }
+/** "cat" -> "C. A. T" — a stop after each letter makes every voice say it as a letter
+    (apostrophes and hyphens are left out) */
+function spellOut(word) { return [...String(word)].map(letterName).filter(Boolean).join('. '); }
 
 /** The device's own English voice when there is one: it starts fastest and follows pitch */
 let preferredVoice = null;
