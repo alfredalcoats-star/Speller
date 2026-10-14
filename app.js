@@ -126,6 +126,7 @@ const GAME_NEEDS = {
   context: { min: 1 },
   missing: { min: 1 },
   spell:   { min: 1 },
+  letters: { min: 1 },
   sing:    { min: 1 },
   // Comprehension games use reading texts for the chosen grade, not word lists
   think:   { gradeOnly: true },
@@ -380,6 +381,7 @@ function startGame(game) {
   state.total = state.words.length;
 
   const gameLabel = { match: '🔗 Word Match', context: '🔍 Context Clues', missing: '✏️ Missing Words', spell: '🎧 Spell It',
+    letters: '🔤 Missing Letters',
     sing: '🎵 Spell to Music',
     think: '🧠 Read & Think', infer: '🕵️ Inference Detective' };
   document.getElementById('gameTitle').textContent = gameLabel[game] || game;
@@ -399,6 +401,7 @@ function startGame(game) {
   if (game === 'context') buildContextRound();
   if (game === 'missing') buildMissingRound();
   if (game === 'spell')   buildSpellRound();
+  if (game === 'letters') buildLettersRound();
   if (game === 'sing')    buildSingGame();
   if (game === 'think' || game === 'infer') buildThinkRound();
 }
@@ -1238,6 +1241,152 @@ document.addEventListener('keydown', e => {
   const tile = /^[a-z'-]$/i.test(e.key) &&
     [...document.querySelectorAll('#spellBank .spell-tile:not(:disabled)')].find(t => t.dataset.t === e.key.toLowerCase());
   if (tile) addSpellTile(tile);
+});
+
+/* ===================================================================
+   MISSING LETTERS — the word is shown with a few letters blanked out.
+   The child hears the word, then taps (or types) the letters that fill
+   the blanks. Vowels are hidden most often, since they are the hardest
+   part of spelling. The tiles are the missing letters plus two extras.
+   =================================================================== */
+function lettersToHide(word) {
+  const spots = [...word].map((c, i) => /[a-z]/i.test(c) ? i : -1).filter(i => i >= 0);
+  const n = spots.length <= 3 ? 1 : spots.length <= 6 ? 2 : 3;
+  const vowels = shuffle(spots.filter(i => /[aeiouy]/i.test(word[i])));
+  const others = shuffle(spots.filter(i => !/[aeiouy]/i.test(word[i])));
+  const picked = [...vowels.slice(0, Math.ceil(n / 2))];
+  for (const i of [...others, ...vowels]) if (picked.length < n && !picked.includes(i)) picked.push(i);
+  return picked.sort((a, b) => a - b);
+}
+
+function buildLettersRound() {
+  if (state.round >= state.words.length) { showResult(); return; }
+  const w = state.words[state.round];
+  setProgress(state.round / state.words.length);
+
+  const word = w.word.toLowerCase();
+  const hidden = lettersToHide(word);
+  const missing = hidden.map(i => word[i]);
+  // Two extra letters that aren't one of the answers (vowels if a vowel is missing)
+  const pool = (missing.some(ch => /[aeiou]/.test(ch)) ? 'aeiou' : 'bcdfghklmnprstw').split('');
+  const extras = shuffle(pool.filter(ch => !missing.includes(ch))).slice(0, 2);
+  const bank = shuffle([...missing, ...extras]);
+  state.gap = { word, hidden, filled: hidden.map(() => null), tries: 0, done: false };
+
+  document.getElementById('gameArea').innerHTML = `
+    <div class="missing-card letters-card">
+      <div class="round-label">🔤 Round ${state.round + 1} of ${state.words.length}${roundTag(w)}</div>
+      <div class="spell-listen">
+        <button class="spell-hear" id="gapHear">🔊 Hear the word</button>
+        <button class="spell-hint" id="spellSentence">💬 Hear it in a sentence</button>
+        <button class="spell-hint meaning" id="spellMeaning">📖 Hear the meaning</button>
+      </div>
+      <p class="spell-sentence" id="spellMeaningText" hidden></p>
+      <p class="spell-sentence" id="spellSentenceText" hidden></p>
+      <p class="letters-help">Fill in the missing letter${hidden.length === 1 ? '' : 's'}!</p>
+      <div class="spell-slots" id="gapSlots">${[...word].map((ch, i) => hidden.includes(i)
+        ? `<button type="button" class="spell-slot gap" data-h="${hidden.indexOf(i)}" aria-label="Missing letter"></button>`
+        : `<span class="spell-slot given">${escapeHtml(ch)}</span>`).join('')}</div>
+      <div class="spell-bank" id="gapBank">${bank.map(t =>
+        `<button class="spell-tile" data-t="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('')}</div>
+      <div class="spell-actions">
+        <button class="btn-outline" id="gapUndo">⌫ Undo</button>
+        <button class="btn-primary" id="gapCheck">✔ Check</button>
+      </div>
+      <div class="feedback-box" id="gapFeedback"></div>
+    </div>`;
+
+  const hear = () => speakText(w.word);
+  document.getElementById('gapHear').addEventListener('click', hear);
+  document.getElementById('spellSentence').addEventListener('click', () => sayInSentence(w));
+  document.getElementById('spellMeaning').addEventListener('click', () => sayMeaning(w));
+  document.querySelectorAll('#gapBank .spell-tile').forEach(t => t.addEventListener('click', () => addGapTile(t)));
+  // Tapping a filled blank gives its letter back
+  document.querySelectorAll('#gapSlots .gap').forEach(s => s.addEventListener('click', () => clearGap(+s.dataset.h)));
+  document.getElementById('gapUndo').addEventListener('click', undoGapTile);
+  document.getElementById('gapCheck').addEventListener('click', checkLetters);
+  setTimeout(hear, 300);
+}
+
+function paintGaps() {
+  const g = state.gap;
+  document.querySelectorAll('#gapSlots .gap').forEach(s => {
+    const tile = g.filled[+s.dataset.h];
+    s.textContent = tile ? tile.dataset.t : '';
+    s.classList.toggle('filled', !!tile);
+  });
+}
+function addGapTile(tile) {
+  const g = state.gap;
+  const at = g.filled.indexOf(null);
+  if (g.done || tile.disabled || at < 0) return;
+  g.filled[at] = tile;
+  tile.disabled = true;
+  paintGaps();
+}
+function clearGap(h) {
+  const g = state.gap;
+  if (g.done || !g.filled[h]) return;
+  g.filled[h].disabled = false;
+  g.filled[h] = null;
+  paintGaps();
+}
+function undoGapTile() {
+  const g = state.gap;
+  for (let h = g.filled.length - 1; h >= 0; h--) if (g.filled[h]) { clearGap(h); return; }
+}
+
+function checkLetters() {
+  const g = state.gap;
+  if (g.done) return;
+  const w = state.words[state.round];
+  const fb = document.getElementById('gapFeedback');
+  if (g.filled.includes(null)) {
+    fb.innerHTML = `<span class="feedback-text wrong">Fill in every blank first.</span>`;
+    return;
+  }
+  g.tries++;
+  const right = g.filled.map((t, h) => t.dataset.t === g.word[g.hidden[h]]);
+  if (right.every(Boolean)) {
+    g.done = true;
+    if (g.tries === 1) { state.score++; updateScoreDisplay(); showToast(`✅ "${w.word}" is right!`, 'correct'); }
+    document.getElementById('gapSlots').classList.add('solved');
+    fb.innerHTML = `<span class="feedback-text correct">🎉 ${g.tries === 1 ? 'Perfect!' : 'You got it!'} "${w.word}"</span>`;
+    speakText(w.word);
+  } else if (g.tries >= 3) {
+    g.done = true;
+    g.hidden.forEach((i, h) => {
+      const s = document.querySelector(`#gapSlots .gap[data-h="${h}"]`);
+      s.textContent = g.word[i];
+      s.classList.add('shown');
+    });
+    fb.innerHTML = `<span class="feedback-text wrong">The word is spelled <b>${escapeHtml(w.word)}</b>. Let's practice it again soon!</span>`;
+    speakText(`${w.word}. ${spellOut(w.word)}. ${w.word}.`, 0.7);
+  } else {
+    // Keep the right letters, give the wrong ones back
+    right.forEach((ok, h) => { if (!ok) clearGap(h); });
+    const n = right.filter(Boolean).length;
+    fb.innerHTML = `<span class="feedback-text wrong">Almost! ${n ? `${n} letter${n === 1 ? ' is' : 's are'} right. ` : ''}Listen again and try.</span>`;
+    speakText(w.word, 0.55);
+    return;
+  }
+  setProgress((state.round + 1) / state.words.length);
+  state.round++;
+  const isLast = state.round >= state.words.length;
+  fb.innerHTML += `<button class="next-btn" id="nextGapBtn">${isLast ? '🏆 See Results' : 'Next Word →'}</button>`;
+  document.getElementById('nextGapBtn').addEventListener('click', buildLettersRound);
+  document.getElementById('nextGapBtn').focus();
+}
+
+/* Typing works here too: letter keys fill the next blank, Backspace undoes, Enter checks */
+document.addEventListener('keydown', e => {
+  if (!document.querySelector('.letters-card') || !document.getElementById('practiceScreen').classList.contains('active')) return;
+  if (e.ctrlKey || e.metaKey || e.altKey || state.gap?.done) return;
+  if (e.key === 'Backspace') { e.preventDefault(); undoGapTile(); return; }
+  if (e.key === 'Enter' && !e.target.closest?.('button')) { e.preventDefault(); checkLetters(); return; }
+  const tile = /^[a-z]$/i.test(e.key) &&
+    [...document.querySelectorAll('#gapBank .spell-tile:not(:disabled)')].find(t => t.dataset.t === e.key.toLowerCase());
+  if (tile) addGapTile(tile);
 });
 
 /* ===================================================================

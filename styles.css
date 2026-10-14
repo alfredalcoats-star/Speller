@@ -1618,3 +1618,14 @@ body {
 #singDone.ready { animation: singPop .6s ease 2; }
 @media (prefers-reduced-motion: reduce) { .sing-letter.lit, #singDone.ready { animation: none; } }
 .sing-novoice { background: #FFF1E0; color: #8A4B00; font-weight: 700; border-radius: 12px; padding: 10px 14px; line-height: 1.5; }
+
+/* ===== MISSING LETTERS ===== */
+.letters-help { text-align: center; font-weight: 800; color: var(--text-mid); margin: 6px 0 0; }
+.spell-slot.given { color: var(--text-mid); background: transparent; border-bottom-color: var(--text-light); }
+.spell-slot.gap {
+  font-family: inherit; color: var(--text-dark); cursor: pointer; border: 3px dashed var(--honey-dark);
+  border-bottom-width: 5px; border-bottom-style: solid; background: var(--honey-light);
+}
+.spell-slot.gap.filled { border-style: solid; border-color: var(--blue); background: var(--cream-2); }
+.spell-slot.gap.shown { color: var(--danger, #c0392b); border-color: var(--danger, #c0392b); }
+.spell-slots.solved .spell-slot.gap { border-color: var(--success); background: var(--success-bg); }
