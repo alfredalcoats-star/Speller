@@ -46,3 +46,29 @@ function askConfirm(message, { confirmLabel = 'Yes', cancelLabel = 'Cancel', dan
     back.querySelector('[data-r="no"]').focus();
   });
 }
+
+/* ===================================================================
+   Speaking letters. A lone letter is unreliable with computer voices
+   (some skip it, some read "A" as "uh"), so letters are spoken by name.
+   =================================================================== */
+const LETTER_NAMES = {
+  a: 'ay', b: 'bee', c: 'see', d: 'dee', e: 'ee', f: 'eff', g: 'jee', h: 'aitch', i: 'eye',
+  j: 'jay', k: 'kay', l: 'el', m: 'em', n: 'en', o: 'oh', p: 'pee', q: 'cue', r: 'ar',
+  s: 'ess', t: 'tee', u: 'you', v: 'vee', w: 'double-you', x: 'ex', y: 'why', z: 'zee',
+};
+function letterName(ch) { return LETTER_NAMES[String(ch).toLowerCase()] || ''; }
+/** "cat" -> "see, ay, tee" (apostrophes and hyphens are left out) */
+function spellOut(word) { return [...String(word)].map(letterName).filter(Boolean).join(', '); }
+
+/** The device's own English voice when there is one: it starts fastest and follows pitch */
+let preferredVoice = null;
+function pickVoice() {
+  if (!window.speechSynthesis) return;
+  const voices = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang));
+  preferredVoice = voices.find(v => v.localService && /en[-_]US/i.test(v.lang))
+    || voices.find(v => v.localService) || voices.find(v => /en[-_]US/i.test(v.lang)) || voices[0] || null;
+}
+if (window.speechSynthesis) {
+  pickVoice();
+  if (speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', pickVoice);
+}

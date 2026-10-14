@@ -890,7 +890,7 @@ function stepHeart() {
       <div class="row-btns"><button class="btn-secondary" id="heartGo">👀 I studied it — hide it!</button></div>
       <div id="heartFind"></div>
       <div class="feedback-box" id="heartFb"></div>`;
-    speak(`${word}. ${word.split('').join(', ')}. ${word}.`, { queue: true });
+    speak(`${word}. ${spellOut(word)}. ${word}.`, { queue: true });
     $('#heartCard').addEventListener('click', () => speak(word));
 
     $('#heartGo').addEventListener('click', () => {
@@ -1222,7 +1222,7 @@ function stepList() {
           ? `🎉 ${esc(w.word)}! ${praise()}`
           : `It's spelled <b>${esc(w.word)}</b>. We'll practice it again soon.`}</span>
           <button class="next-btn" id="nextList">Next →</button>`;
-        speak(right ? w.word : `${w.word}. ${target.join(', ')}. ${w.word}.`);
+        speak(right ? w.word : `${w.word}. ${spellOut(w.word)}. ${w.word}.`);
         $('#nextList').addEventListener('click', () => { i++; show(); });
         $('#nextList').focus();
       });

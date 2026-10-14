@@ -796,10 +796,13 @@ function getDistractors(words, currentIdx, count) {
    =================================================================== */
 function speakText(text, rate = 0.8) {
   if (!window.speechSynthesis || !text) return;
+  const busy = speechSynthesis.speaking || speechSynthesis.pending;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
+  try { if (preferredVoice) u.voice = preferredVoice; } catch (e) { /* use the default voice */ }
   u.rate = rate;
-  speechSynthesis.speak(u);
+  // Chrome can drop speech that starts right after cancel(), so give it a moment
+  setTimeout(() => { if (speechSynthesis.paused) speechSynthesis.resume(); speechSynthesis.speak(u); }, busy ? 80 : 0);
 }
 
 function buildSpellRound() {
@@ -881,23 +884,47 @@ function chime(step, seconds = 0.45) {
   } catch (e) { /* sound not available; the voice still sings */ }
 }
 
-/* Speak one piece on a pitch; resolves when it's done (or after a safe wait) */
-function chant(text, step, rate) {
+/* Sing one piece on a pitch. The note and the lit-up letter start the moment the
+   voice starts (onStart), so the letter and the music always land together.
+   If the voice is slow or missing, the music carries on without waiting forever. */
+function chant(text, step, rate, onStart) {
   return new Promise(resolve => {
-    const fallback = setTimeout(resolve, 900);
-    if (!window.speechSynthesis) return;
+    let started = false, finished = false;
+    const start = () => { if (!started) { started = true; onStart?.(); } };
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(lateStart);
+      clearTimeout(giveUp);
+      start();
+      resolve();
+    };
+    const lateStart = setTimeout(start, 900);    // voice hasn't begun: play the note anyway
+    const giveUp = setTimeout(finish, 3500);     // voice never finished: move on
+    if (!window.speechSynthesis || !singHasVoice()) { start(); setTimeout(finish, 650); return; }
     const u = new SpeechSynthesisUtterance(text);
+    try { if (preferredVoice) u.voice = preferredVoice; } catch (e) { /* use the default voice */ }
     u.pitch = Math.min(2, 0.6 + step * 0.14);
     u.rate = rate;
-    u.onend = u.onerror = () => { clearTimeout(fallback); resolve(); };
+    u.onstart = start;
+    u.onend = finish;
+    u.onerror = finish;
+    if (speechSynthesis.paused) speechSynthesis.resume();
     speechSynthesis.speak(u);
   });
+}
+function singHasVoice() {
+  return !!window.speechSynthesis && speechSynthesis.getVoices().length > 0;
 }
 const pause = ms => new Promise(r => setTimeout(r, ms));
 
 async function singWord(w, btn) {
   const my = ++sing.token;
-  if (window.speechSynthesis) speechSynthesis.cancel();
+  if (window.speechSynthesis) {
+    speechSynthesis.cancel();
+    await pause(90);                 // Chrome drops speech that starts right after cancel()
+    if (my !== sing.token) return;
+  }
   const tune = SING_TUNES[sing.tune];
   const speed = SING_SPEED[sing.speed];
   const letters = [...w.word];
@@ -913,16 +940,21 @@ async function singWord(w, btn) {
     const ch = letters[i];
     if (!/[a-z]/i.test(ch)) { tiles[i].classList.add('lit'); continue; }   // apostrophes and hyphens are shown, not sung
     const step = tune.steps[n++ % tune.steps.length];
-    tiles[i].classList.add('lit');
-    chime(step);
-    await chant(ch.toUpperCase(), step, speed.rate);
+    // Sing the letter's NAME ("eff", "ar"…): a lone letter is often skipped or misread
+    await chant(letterName(ch), step, speed.rate, () => {
+      if (my !== sing.token) return;
+      tiles[i].classList.add('lit');
+      chime(step);
+    });
     await pause(speed.gap);
   }
   if (my !== sing.token) return;
-  stage.querySelector('.sing-letters').classList.add('done');
-  stage.querySelector('.sing-full').textContent = w.word;
-  chime(tune.end, 0.8);
-  await chant(`${w.word}!`, tune.end, speed.rate * 0.9);
+  await chant(`${w.word}!`, tune.end, speed.rate * 0.9, () => {
+    if (my !== sing.token) return;
+    stage.querySelector('.sing-letters').classList.add('done');
+    stage.querySelector('.sing-full').textContent = w.word;
+    chime(tune.end, 0.8);
+  });
   if (my !== sing.token) return;
   btn.classList.remove('singing');
   if (!sing.sung.has(w.word)) {
@@ -957,6 +989,7 @@ function buildSingGame() {
         </div>
         <button type="button" class="btn-primary sing-all" id="singAll">🎵 Sing them all</button>
       </div>
+      <p class="sing-novoice" id="singNoVoice" hidden>🔇 This device has no speaking voice turned on, so the letters light up with the music. Turn up the volume, or try another browser, to hear them sung.</p>
       <div class="sing-now" id="singNow"><p class="sing-placeholder">Pick a word below 👇</p></div>
       <div class="sing-grid">${words.map((w, i) =>
         `<button type="button" class="sing-word" data-i="${i}"><span class="sing-check" aria-hidden="true">♪</span>${escapeHtml(w.word)}${webBadge(w)}</button>`).join('')}</div>
@@ -964,6 +997,11 @@ function buildSingGame() {
     </div>`;
 
   document.querySelectorAll('.sing-word').forEach(b => b.addEventListener('click', () => singWord(words[+b.dataset.i], b)));
+  // Voices can load a moment after the page; only warn if there are still none
+  setTimeout(() => {
+    const note = document.getElementById('singNoVoice');
+    if (note) note.hidden = singHasVoice();
+  }, 1500);
   document.querySelectorAll('[data-tune]').forEach(b => b.addEventListener('click', () => {
     sing.tune = b.dataset.tune;
     document.querySelectorAll('[data-tune]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); });
@@ -1111,7 +1149,7 @@ function checkSpelling() {
   } else if (sp.tries >= 3) {
     sp.done = true;
     fb.innerHTML = `<span class="feedback-text wrong">The word is spelled <b>${w.word}</b>. Let's practice it again soon!</span>`;
-    speakText(`${w.word}. ${sp.target.join(', ')}. ${w.word}.`, 0.7);
+    speakText(`${w.word}. ${spellOut(w.word)}. ${w.word}.`, 0.7);
   } else {
     // Keep the correct start of the word, give the rest back — shows exactly what to fix
     let keep = 0;

@@ -1616,3 +1616,4 @@ body {
 #singDone { margin-top: 4px; }
 #singDone.ready { animation: singPop .6s ease 2; }
 @media (prefers-reduced-motion: reduce) { .sing-letter.lit, #singDone.ready { animation: none; } }
+.sing-novoice { background: #FFF1E0; color: #8A4B00; font-weight: 700; border-radius: 12px; padding: 10px 14px; line-height: 1.5; }
