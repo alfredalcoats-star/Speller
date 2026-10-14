@@ -1566,3 +1566,53 @@ body {
 }
 .spell-hint:disabled { opacity: .6; cursor: wait; }
 .spell-hint.meaning { background: var(--teal-light, #DDF5F1); border-color: var(--teal, #0E9F8E); }
+
+/* ===== SING & SPELL ===== */
+.sing-card {
+  background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-card);
+  border: 1.5px solid var(--line, #DDE2F0); padding: 24px; max-width: 900px; margin: 0 auto; display: grid; gap: 16px;
+}
+.sing-card .match-intro { margin: 0; }
+.sing-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; }
+.sing-group { display: flex; gap: 4px; background: var(--cream-2); padding: 4px; border-radius: 14px; flex-wrap: wrap; }
+.sing-opt {
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: .92rem; color: var(--text-mid);
+  border: none; background: transparent; border-radius: 10px; padding: 8px 12px; cursor: pointer;
+}
+.sing-opt.on { background: var(--white); color: var(--text-dark); box-shadow: 0 1px 3px rgba(29, 35, 71, .15); }
+.sing-all { padding: 10px 18px; }
+.sing-now {
+  min-height: 150px; display: grid; place-items: center; gap: 6px; text-align: center;
+  background: linear-gradient(180deg, var(--honey-light), var(--white)); border-radius: 18px; padding: 18px 10px;
+}
+.sing-placeholder { color: var(--text-light); font-weight: 800; font-size: 1.1rem; }
+.sing-letters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.sing-letter {
+  min-width: 56px; height: 68px; padding: 0 6px; display: grid; place-items: center;
+  font-family: var(--display, 'Nunito'), sans-serif; font-weight: 800; font-size: 2.4rem; color: var(--text-light);
+  background: var(--white); border: 2.5px dashed var(--line, #DDE2F0); border-radius: 14px;
+  transition: transform .15s, background .15s, color .15s, border-color .15s;
+}
+.sing-letter.mark { min-width: 24px; }
+.sing-letter.lit {
+  color: var(--text-dark); background: var(--honey); border: 2.5px solid var(--honey-dark);
+  animation: singPop .35s ease;
+}
+.sing-letters.done .sing-letter.lit { background: var(--success-bg); border-color: var(--success); }
+.sing-full { font-family: var(--display, 'Nunito'), sans-serif; font-weight: 800; font-size: 1.8rem; color: var(--text-dark); min-height: 2.2rem; }
+@keyframes singPop { 0% { transform: translateY(0) scale(1); } 45% { transform: translateY(-14px) scale(1.12); } 100% { transform: translateY(0) scale(1); } }
+.sing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.sing-word {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1.25rem; color: var(--text-dark);
+  background: var(--white); border: 2.5px solid var(--line, #DDE2F0); border-radius: 16px; padding: 16px 10px;
+  cursor: pointer; transition: transform .15s, border-color .15s;
+}
+.sing-word:hover { transform: translateY(-2px); border-color: var(--honey-dark); }
+.sing-word.singing { border-color: var(--honey-dark); background: var(--honey-light); }
+.sing-word.sung { border-color: var(--success); }
+.sing-check { color: var(--text-light); font-size: 1rem; }
+.sing-word.sung .sing-check { color: var(--success); }
+#singDone { margin-top: 4px; }
+#singDone.ready { animation: singPop .6s ease 2; }
+@media (prefers-reduced-motion: reduce) { .sing-letter.lit, #singDone.ready { animation: none; } }

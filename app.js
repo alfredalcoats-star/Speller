@@ -49,7 +49,11 @@ document.getElementById('logoHome').addEventListener('click', (e) => {
 
 document.getElementById('backFromGames').addEventListener('click', () => showScreen('homeScreen'));
 document.getElementById('backFromLists').addEventListener('click', () => { renderHomeLists(); showScreen('homeScreen'); });
-document.getElementById('backFromPractice').addEventListener('click', () => showScreen('gamesScreen'));
+document.getElementById('backFromPractice').addEventListener('click', () => {
+  if (typeof sing !== 'undefined') sing.token++;
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  showScreen('gamesScreen');
+});
 
 /* ===================================================================
    FRESH WORDS FROM THE INTERNET
@@ -123,6 +127,7 @@ const GAME_NEEDS = {
   context: { min: 1 },
   missing: { min: 1 },
   spell:   { min: 1 },
+  sing:    { min: 1 },
   // Comprehension games use reading texts for the chosen grade, not word lists
   think:   { gradeOnly: true },
   infer:   { gradeOnly: true },
@@ -324,7 +329,7 @@ function wordsForGame(game) {
   if (state.source === 'list' && list) {
     state.distractorPool = list.words.map(w => w.word);
     // Every word on the list gets practiced (up to 20); Word Match keeps 8 pairs so it fits on screen
-    return listRounds.slice(0, game === 'match' ? 8 : 20);
+    return listRounds.slice(0, game === 'match' ? 8 : game === 'sing' ? 12 : 20);
   }
   const gradeWords = buildWordSet(state.currentGrade);
   if (state.source === 'mixed' && list) {
@@ -368,6 +373,7 @@ function startGame(game) {
   state.total = state.words.length;
 
   const gameLabel = { match: '🔗 Word Match', context: '🔍 Context Clues', missing: '✏️ Missing Words', spell: '🎧 Spell It',
+    sing: '🎵 Sing & Spell',
     think: '🧠 Read & Think', infer: '🕵️ Inference Detective' };
   document.getElementById('gameTitle').textContent = gameLabel[game] || game;
 
@@ -386,6 +392,7 @@ function startGame(game) {
   if (game === 'context') buildContextRound();
   if (game === 'missing') buildMissingRound();
   if (game === 'spell')   buildSpellRound();
+  if (game === 'sing')    buildSingGame();
   if (game === 'think' || game === 'infer') buildThinkRound();
 }
 
@@ -836,6 +843,152 @@ function buildSpellRound() {
   setTimeout(hear, 300);
 }
 
+/* ===================================================================
+   SING & SPELL — tap a word and it's sung letter by letter
+   Each letter is spoken at the pitch of a note in the chosen tune while a
+   soft chime plays that note, then the whole word is sung at the end.
+   (Computer voices can't truly sing, so they chant on pitch over the chimes.)
+   =================================================================== */
+const SING_TUNES = {
+  // Scale steps: 0 = C, 1 = D, 2 = E … 7 = high C, 8 = high D
+  cheer:   { name: '📣 Cheer',   steps: [0, 2, 4, 7, 4, 2, 4, 7], end: 7 },
+  twinkle: { name: '⭐ Twinkle', steps: [0, 0, 4, 4, 5, 5, 4, 3, 3, 2, 2, 1, 1, 0], end: 0 },
+  bingo:   { name: '🐶 B-I-N-G-O', steps: [5, 5, 6, 6, 7, 4, 4, 5, 5, 6], end: 7 },
+};
+const SCALE_HZ = [261.63, 293.66, 329.63, 349.23, 392.0, 440.0, 493.88, 523.25, 587.33];
+const SING_SPEED = { slow: { gap: 380, rate: 0.75 }, normal: { gap: 160, rate: 0.95 } };
+const sing = { tune: 'cheer', speed: 'slow', token: 0, sung: new Set(), audio: null };
+
+function chime(step, seconds = 0.45) {
+  try {
+    sing.audio = sing.audio || new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = sing.audio;
+    if (ctx.state === 'suspended') ctx.resume();
+    const t = ctx.currentTime;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + seconds);
+    gain.connect(ctx.destination);
+    [['triangle', 1], ['sine', 2]].forEach(([type, mult]) => {
+      const osc = ctx.createOscillator();
+      osc.type = type;
+      osc.frequency.value = SCALE_HZ[step] * mult;
+      osc.connect(gain);
+      osc.start(t);
+      osc.stop(t + seconds);
+    });
+  } catch (e) { /* sound not available; the voice still sings */ }
+}
+
+/* Speak one piece on a pitch; resolves when it's done (or after a safe wait) */
+function chant(text, step, rate) {
+  return new Promise(resolve => {
+    const fallback = setTimeout(resolve, 900);
+    if (!window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.pitch = Math.min(2, 0.6 + step * 0.14);
+    u.rate = rate;
+    u.onend = u.onerror = () => { clearTimeout(fallback); resolve(); };
+    speechSynthesis.speak(u);
+  });
+}
+const pause = ms => new Promise(r => setTimeout(r, ms));
+
+async function singWord(w, btn) {
+  const my = ++sing.token;
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  const tune = SING_TUNES[sing.tune];
+  const speed = SING_SPEED[sing.speed];
+  const letters = [...w.word];
+  const stage = document.getElementById('singNow');
+  document.querySelectorAll('.sing-word').forEach(b => b.classList.toggle('singing', b === btn));
+  stage.innerHTML = `<div class="sing-letters">${letters.map(ch =>
+    `<span class="sing-letter ${/[a-z]/i.test(ch) ? '' : 'mark'}">${escapeHtml(ch.toUpperCase())}</span>`).join('')}</div>
+    <div class="sing-full" aria-live="polite"></div>`;
+  const tiles = [...stage.querySelectorAll('.sing-letter')];
+  let n = 0;
+  for (let i = 0; i < letters.length; i++) {
+    if (my !== sing.token) return;
+    const ch = letters[i];
+    if (!/[a-z]/i.test(ch)) { tiles[i].classList.add('lit'); continue; }   // apostrophes and hyphens are shown, not sung
+    const step = tune.steps[n++ % tune.steps.length];
+    tiles[i].classList.add('lit');
+    chime(step);
+    await chant(ch.toUpperCase(), step, speed.rate);
+    await pause(speed.gap);
+  }
+  if (my !== sing.token) return;
+  stage.querySelector('.sing-letters').classList.add('done');
+  stage.querySelector('.sing-full').textContent = w.word;
+  chime(tune.end, 0.8);
+  await chant(`${w.word}!`, tune.end, speed.rate * 0.9);
+  if (my !== sing.token) return;
+  btn.classList.remove('singing');
+  if (!sing.sung.has(w.word)) {
+    sing.sung.add(w.word);
+    btn.classList.add('sung');
+    btn.querySelector('.sing-check').textContent = '✓';
+    state.score = sing.sung.size;
+    updateScoreDisplay();
+    setProgress(sing.sung.size / state.words.length);
+    if (sing.sung.size === state.words.length) {
+      showToast('🎉 You sang every word!', 'correct');
+      document.getElementById('singDone').classList.add('ready');
+    }
+  }
+}
+
+function buildSingGame() {
+  sing.sung = new Set();
+  sing.token++;
+  const words = state.words;
+  document.getElementById('gameArea').innerHTML = `
+    <div class="sing-card">
+      <p class="match-intro">🎵 Tap a word to hear it sung, letter by letter. Then sing it with me!</p>
+      <div class="sing-controls">
+        <div class="sing-group" role="radiogroup" aria-label="Tune">
+          ${Object.entries(SING_TUNES).map(([id, t]) =>
+            `<button type="button" class="sing-opt ${id === sing.tune ? 'on' : ''}" data-tune="${id}" role="radio" aria-checked="${id === sing.tune}">${t.name}</button>`).join('')}
+        </div>
+        <div class="sing-group" role="radiogroup" aria-label="Speed">
+          <button type="button" class="sing-opt ${sing.speed === 'slow' ? 'on' : ''}" data-speed="slow" role="radio" aria-checked="${sing.speed === 'slow'}">🐢 Slow</button>
+          <button type="button" class="sing-opt ${sing.speed === 'normal' ? 'on' : ''}" data-speed="normal" role="radio" aria-checked="${sing.speed === 'normal'}">🐇 Normal</button>
+        </div>
+        <button type="button" class="btn-primary sing-all" id="singAll">🎵 Sing them all</button>
+      </div>
+      <div class="sing-now" id="singNow"><p class="sing-placeholder">Pick a word below 👇</p></div>
+      <div class="sing-grid">${words.map((w, i) =>
+        `<button type="button" class="sing-word" data-i="${i}"><span class="sing-check" aria-hidden="true">♪</span>${escapeHtml(w.word)}${webBadge(w)}</button>`).join('')}</div>
+      <button type="button" class="next-btn" id="singDone">🏆 I'm done singing</button>
+    </div>`;
+
+  document.querySelectorAll('.sing-word').forEach(b => b.addEventListener('click', () => singWord(words[+b.dataset.i], b)));
+  document.querySelectorAll('[data-tune]').forEach(b => b.addEventListener('click', () => {
+    sing.tune = b.dataset.tune;
+    document.querySelectorAll('[data-tune]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); });
+  }));
+  document.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click', () => {
+    sing.speed = b.dataset.speed;
+    document.querySelectorAll('[data-speed]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); });
+  }));
+  document.getElementById('singAll').addEventListener('click', async () => {
+    let expected = ++sing.token;
+    for (const b of document.querySelectorAll('.sing-word')) {
+      if (sing.token !== expected) return;          // a tap or "done" took over
+      await singWord(words[+b.dataset.i], b);       // each word moves the token on by one
+      expected++;
+      if (sing.token !== expected) return;
+      await pause(500);
+    }
+  });
+  document.getElementById('singDone').addEventListener('click', () => {
+    sing.token++;
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    showResult();
+  });
+}
+
 /* ---------- "Hear it in a sentence" and "Hear the meaning" for every word ----------
    The sentence is read word, sentence, word, the way spelling tests are given.
    Both come from the word itself, the built-in grade words, what was found
@@ -1003,7 +1156,9 @@ function showResult() {
 
   if (pct === 1) {
     title   = '🏆 Perfect Score!';
-    message = `Amazing! You got all ${state.total} correct. You're a true ${{ think: 'Reading Champion', infer: 'Reading Detective' }[state.currentGame] || 'Spelling Champion'}!`;
+    message = state.currentGame === 'sing'
+      ? `You sang all ${state.total} words! You're a true Spelling Superstar!`
+      : `Amazing! You got all ${state.total} correct. You're a true ${{ think: 'Reading Champion', infer: 'Reading Detective' }[state.currentGame] || 'Spelling Champion'}!`;
     stars   = '⭐⭐⭐';
     launchConfetti();
   } else if (pct >= 0.75) {
@@ -1020,6 +1175,9 @@ function showResult() {
     stars   = '';
   }
 
+  if (state.currentGame === 'sing' && pct < 1) {
+    message = `You sang ${state.score} of ${state.total} words. Come back and sing the rest!`;
+  }
   document.getElementById('resultTitle').textContent   = title;
   document.getElementById('resultMessage').textContent = message;
   document.getElementById('resultStars').textContent   = stars;
