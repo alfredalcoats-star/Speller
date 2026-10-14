@@ -817,7 +817,7 @@ function speakText(text, rate = 0.8) {
   const busy = speechSynthesis.speaking || speechSynthesis.pending;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  try { if (preferredVoice) u.voice = preferredVoice; } catch (e) { /* use the default voice */ }
+  useVoice(u);
   u.rate = rate;
   // Chrome can drop speech that starts right after cancel(), so give it a moment
   setTimeout(() => { if (speechSynthesis.paused) speechSynthesis.resume(); speechSynthesis.speak(u); }, busy ? 80 : 0);
@@ -961,7 +961,7 @@ function sayPart(text, rate, onStart) {
     const giveUp = setTimeout(finish, 4000);     // voice never finished: move on
     if (!window.speechSynthesis) { start(); setTimeout(finish, 650); return; }
     const u = new SpeechSynthesisUtterance(text);
-    try { if (preferredVoice) u.voice = preferredVoice; } catch (e) { /* use the default voice */ }
+    useVoice(u);
     u.lang = 'en-US';
     u.rate = rate;
     u.onstart = start;

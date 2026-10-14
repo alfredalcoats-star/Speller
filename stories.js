@@ -75,7 +75,7 @@ function speak(text, rate = 0.85) {
   return new Promise(resolve => {
     if (!synth || !text) { resolve(false); return; }
     const token = speechToken;
-    const u = new SpeechSynthesisUtterance(text);
+    const u = useVoice(new SpeechSynthesisUtterance(text));
     u.rate = rate;
     const fallback = setTimeout(() => resolve(token === speechToken), 1500 + text.length * 90);
     u.onend = u.onerror = () => { clearTimeout(fallback); resolve(token === speechToken); };

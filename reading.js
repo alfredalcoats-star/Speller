@@ -134,14 +134,6 @@ function launchConfetti() {
    SPEECH (Web Speech API)
    =================================================================== */
 const synth = window.speechSynthesis;
-let voice = null;
-function chooseVoice() {
-  if (!synth) return;
-  const voices = synth.getVoices().filter(v => v.lang && v.lang.startsWith('en'));
-  voice = voices.find(v => /Samantha|Google US English|Aria|Jenny|Natural/i.test(v.name))
-       || voices.find(v => v.lang === 'en-US') || voices[0] || null;
-}
-if (synth) { chooseVoice(); synth.onvoiceschanged = chooseVoice; }
 
 let speechToken = 0;
 function speak(text, opts = {}) {
@@ -150,7 +142,7 @@ function speak(text, opts = {}) {
     if (!opts.queue) { synth.cancel(); speechToken++; }
     const token = speechToken;
     const u = new SpeechSynthesisUtterance(text);
-    if (voice) u.voice = voice;
+    useVoice(u);   // the shared woman's voice (ui.js)
     u.rate = opts.rate ?? parseFloat(activeProfile()?.settings.rate || '0.8');
     u.pitch = 1.05;
     // Safety net: some browsers never fire onend
