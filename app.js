@@ -283,8 +283,8 @@ function renderGamesScreen() {
   document.getElementById('sourceGradeWrap').hidden = src === 'list';
   document.getElementById('sourceHint').innerHTML = !lists.length
     ? 'Want to practice your own words? <button type="button" class="link-inline" id="makeListLink">Make a word list</button>'
-    : src === 'mixed' ? `About half the words come from "${escapeHtml(list.name)}" and half are random ${gradeName(grade)} words.`
-    : src === 'list' ? `Every word on "${escapeHtml(list.name)}" is practiced.`
+    : src === 'mixed' ? `All ${list.words.length} words from "${escapeHtml(list.name)}", mixed with random ${gradeName(grade)} words.`
+    : src === 'list' ? `All ${list.words.length} words on "${escapeHtml(list.name)}" are practiced — no limit.`
     : `Random ${gradeName(grade)} words, different every time.`;
   document.getElementById('makeListLink')?.addEventListener('click', openListsScreen);
 
@@ -309,6 +309,15 @@ function renderGamesScreen() {
     const need = GAME_NEEDS[game];
     const enough = need.gradeOnly || src !== 'list' || listRoundsFor(game, entries).length >= need.min;
     card.classList.toggle('gsc-disabled', !enough);
+    // Show how many words this game will use
+    const countEl = card.querySelectorAll('.gsc-info span')[1];
+    if (countEl) {
+      countEl.dataset.default ??= countEl.textContent;
+      const n = src !== 'random' && !need.gradeOnly ? listRoundsFor(game, entries).length : 0;
+      countEl.textContent = !n ? countEl.dataset.default
+        : src === 'list' ? `📋 All ${n} word${n === 1 ? '' : 's'}`
+        : `📋 Your ${n} + random`;
+    }
     card.querySelector('.gsc-note')?.remove();
     if (!enough) card.insertAdjacentHTML('beforeend', `<div class="gsc-note">Add at least ${need.min} words to this list in My Word Lists</div>`);
   });
@@ -327,16 +336,15 @@ function wordsForGame(game) {
   const listRounds = list ? shuffle(listRoundsFor(game, listEntries(list))) : [];
   if (state.source === 'list' && list) {
     state.distractorPool = list.words.map(w => w.word);
-    // Every word on the list gets practiced (up to 20); Word Match keeps 8 pairs so it fits on screen
-    return listRounds.slice(0, game === 'match' ? 8 : game === 'sing' ? 12 : 20);
+    // Every word on the list gets practiced, however long the list is
+    return listRounds;
   }
   const gradeWords = buildWordSet(state.currentGrade);
   if (state.source === 'mixed' && list) {
-    // About half from the list, the rest random grade-level words
-    const total = game === 'match' ? 8 : 10;
-    const mine = listRounds.slice(0, Math.ceil(total / 2));
+    // Every word from the list, plus random grade-level words mixed in
+    const mine = listRounds;
     const taken = new Set(mine.map(w => w.word.toLowerCase()));
-    const others = gradeWords.filter(w => !taken.has(w.word.toLowerCase())).slice(0, total - mine.length);
+    const others = gradeWords.filter(w => !taken.has(w.word.toLowerCase())).slice(0, Math.max(4, mine.length));
     state.distractorPool = [...list.words.map(w => w.word), ...others.map(w => w.word)];
     return shuffle([...mine, ...others]);
   }
@@ -496,17 +504,24 @@ function launchConfetti() {
 /* ===================================================================
    MATCH GAME
    =================================================================== */
-function buildMatchGame() {
-  state.matchState = { selectedWord: null, selectedDef: null, matched: new Set() };
-  const words = state.words;
+/* Long lists are matched a few pairs at a time, so the screen stays easy to read */
+const MATCH_SET = 8;
+function buildMatchGame(start = 0) {
+  const all = state.words;
+  const sets = Math.ceil(all.length / MATCH_SET);
+  const size = Math.ceil(all.length / sets);          // even sets, e.g. 20 words -> 7, 7, 6
+  const words = all.slice(start, start + size);
+  const setNo = Math.floor(start / size) + 1;
+  state.matchState = { selectedWord: null, selectedDef: null, matched: new Set(), start, size: words.length, last: start + words.length >= all.length };
 
   // Plain list words have no meaning to match, so the child matches the word they HEAR
   const anyAudio = words.some(w => !w.definition);
-  const wordItems = shuffle(words.map((w, i) => ({ id: i, label: escapeHtml(w.word) + webBadge(w) })));
-  const defItems  = shuffle(words.map((w, i) => ({ id: i, audio: !w.definition,
+  const wordItems = shuffle(words.map((w, i) => ({ id: start + i, label: escapeHtml(w.word) + webBadge(w) })));
+  const defItems  = shuffle(words.map((w, i) => ({ id: start + i, audio: !w.definition,
     label: w.definition ? escapeHtml(w.definition) : '<span class="match-listen">🔊 Listen</span>' })));
 
   document.getElementById('gameArea').innerHTML = `
+    ${sets > 1 ? `<div class="round-label">🔗 Set ${setNo} of ${sets}</div>` : ''}
     <p class="match-intro">🐝 Click a <strong>word</strong> on the left, then click its <strong>match</strong> on the right!${
       anyAudio ? ' Tap 🔊 to hear a word.' : ''}</p>
     <div class="match-grid">
@@ -562,14 +577,18 @@ function handleMatchClick(e) {
 
       state.score++;
       updateScoreDisplay();
-      setProgress(ms.matched.size / state.words.length);
+      setProgress((ms.start + ms.matched.size) / state.words.length);
       showToast('✅ Match! Well done!', 'correct');
 
       const rect = wEl.getBoundingClientRect();
       showScorePop('+1 ⭐', rect.left + rect.width / 2, rect.top + window.scrollY);
 
-      if (ms.matched.size === state.words.length) {
-        setTimeout(showResult, 700);
+      if (ms.matched.size === ms.size) {
+        if (ms.last) setTimeout(showResult, 700);
+        else {
+          setTimeout(() => showToast('🎉 Set done! Here come more words…', 'correct'), 500);
+          setTimeout(() => buildMatchGame(ms.start + ms.size), 1300);
+        }
       }
     } else {
       // Wrong match

@@ -10,7 +10,6 @@
 
 const WordLists = (() => {
   const KEY = 'customWordLists.v1';
-  const MAX_WORDS = 50;
   const WORD_RE = /^[A-Za-z][A-Za-z'-]*$/;
 
   // Lists are shown inside pages, so drop anything that could act as markup
@@ -58,7 +57,6 @@ const WordLists = (() => {
       const key = word.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
-      if (words.length >= MAX_WORDS) { problems.push(`Only the first ${MAX_WORDS} words were kept.`); break; }
       let keptSentence = sentence;
       if (sentence && !wordRe(word).test(sentence)) {
         problems.push(`The sentence for "${word}" doesn't use the word, so it was left out.`);
