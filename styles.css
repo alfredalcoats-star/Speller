@@ -1599,6 +1599,7 @@ body {
   animation: singPop .35s ease;
 }
 .sing-letters.done .sing-letter.lit { background: var(--success-bg); border-color: var(--success); }
+.sing-letter.now { transform: scale(1.15); box-shadow: 0 0 0 4px var(--honey-light); }
 .sing-full { font-family: var(--display, 'Nunito'), sans-serif; font-weight: 800; font-size: 1.8rem; color: var(--text-dark); min-height: 2.2rem; }
 @keyframes singPop { 0% { transform: translateY(0) scale(1); } 45% { transform: translateY(-14px) scale(1.12); } 100% { transform: translateY(0) scale(1); } }
 .sing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }

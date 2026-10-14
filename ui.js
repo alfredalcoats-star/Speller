@@ -52,8 +52,8 @@ function askConfirm(message, { confirmLabel = 'Yes', cancelLabel = 'Cancel', dan
    (some skip it, some read "A" as "uh"), so letters are spoken by name.
    =================================================================== */
 const LETTER_NAMES = {
-  a: 'ay', b: 'bee', c: 'see', d: 'dee', e: 'ee', f: 'eff', g: 'jee', h: 'aitch', i: 'eye',
-  j: 'jay', k: 'kay', l: 'el', m: 'em', n: 'en', o: 'oh', p: 'pee', q: 'cue', r: 'ar',
+  a: 'ay', b: 'bee', c: 'see', d: 'dee', e: 'ee', f: 'eff', g: 'gee', h: 'aitch', i: 'eye',
+  j: 'jay', k: 'kay', l: 'ell', m: 'em', n: 'en', o: 'oh', p: 'pee', q: 'cue', r: 'are',
   s: 'ess', t: 'tee', u: 'you', v: 'vee', w: 'double-you', x: 'ex', y: 'why', z: 'zee',
 };
 function letterName(ch) { return LETTER_NAMES[String(ch).toLowerCase()] || ''; }

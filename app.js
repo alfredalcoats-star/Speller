@@ -50,8 +50,7 @@ document.getElementById('logoHome').addEventListener('click', (e) => {
 document.getElementById('backFromGames').addEventListener('click', () => showScreen('homeScreen'));
 document.getElementById('backFromLists').addEventListener('click', () => { renderHomeLists(); showScreen('homeScreen'); });
 document.getElementById('backFromPractice').addEventListener('click', () => {
-  if (typeof sing !== 'undefined') sing.token++;
-  if (window.speechSynthesis) speechSynthesis.cancel();
+  stopSpelling();
   showScreen('gamesScreen');
 });
 
@@ -373,7 +372,7 @@ function startGame(game) {
   state.total = state.words.length;
 
   const gameLabel = { match: '🔗 Word Match', context: '🔍 Context Clues', missing: '✏️ Missing Words', spell: '🎧 Spell It',
-    sing: '🎵 Sing & Spell',
+    sing: '🎵 Spell to Music',
     think: '🧠 Read & Think', infer: '🕵️ Inference Detective' };
   document.getElementById('gameTitle').textContent = gameLabel[game] || game;
 
@@ -847,47 +846,87 @@ function buildSpellRound() {
 }
 
 /* ===================================================================
-   SING & SPELL — tap a word and it's sung letter by letter
-   Each letter is spoken at the pitch of a note in the chosen tune while a
-   soft chime plays that note, then the whole word is sung at the end.
-   (Computer voices can't truly sing, so they chant on pitch over the chimes.)
+   SPELL TO MUSIC — tap a word and hear it spelled out loud
+   A soft music loop plays underneath while the letters are SPOKEN in a
+   normal voice (not sung), one at a time, then the whole word is read.
    =================================================================== */
 const SING_TUNES = {
   // Scale steps: 0 = C, 1 = D, 2 = E … 7 = high C, 8 = high D
-  cheer:   { name: '📣 Cheer',   steps: [0, 2, 4, 7, 4, 2, 4, 7], end: 7 },
-  twinkle: { name: '⭐ Twinkle', steps: [0, 0, 4, 4, 5, 5, 4, 3, 3, 2, 2, 1, 1, 0], end: 0 },
-  bingo:   { name: '🐶 B-I-N-G-O', steps: [5, 5, 6, 6, 7, 4, 4, 5, 5, 6], end: 7 },
+  cheer:   { name: '📣 Cheer',   steps: [0, 2, 4, 7, 4, 2, 4, 7] },
+  twinkle: { name: '⭐ Twinkle', steps: [0, 0, 4, 4, 5, 5, 4, 3, 3, 2, 2, 1, 1, 0] },
+  bingo:   { name: '🐶 B-I-N-G-O', steps: [5, 5, 6, 6, 7, 4, 4, 5, 5, 6] },
 };
 const SCALE_HZ = [261.63, 293.66, 329.63, 349.23, 392.0, 440.0, 493.88, 523.25, 587.33];
-const SING_SPEED = { slow: { gap: 380, rate: 0.75 }, normal: { gap: 160, rate: 0.95 } };
+const SING_SPEED = { slow: { gap: 350, rate: 0.8, beat: 0.5 }, normal: { gap: 150, rate: 1, beat: 0.36 } };
 const sing = { tune: 'cheer', speed: 'slow', token: 0, sung: new Set(), audio: null };
 
-function chime(step, seconds = 0.45) {
+/* ---------- Background music (Web Audio, nothing to download) ---------- */
+function audioCtx() {
   try {
     sing.audio = sing.audio || new (window.AudioContext || window.webkitAudioContext)();
-    const ctx = sing.audio;
-    if (ctx.state === 'suspended') ctx.resume();
-    const t = ctx.currentTime;
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + seconds);
-    gain.connect(ctx.destination);
-    [['triangle', 1], ['sine', 2]].forEach(([type, mult]) => {
-      const osc = ctx.createOscillator();
-      osc.type = type;
-      osc.frequency.value = SCALE_HZ[step] * mult;
-      osc.connect(gain);
-      osc.start(t);
-      osc.stop(t + seconds);
-    });
-  } catch (e) { /* sound not available; the voice still sings */ }
+    if (sing.audio.state === 'suspended') sing.audio.resume();
+    return sing.audio;
+  } catch (e) { return null; }
+}
+function playNote(ctx, out, hz, t, len, vol, type) {
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.03);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  g.connect(out);
+  const o = ctx.createOscillator();
+  o.type = type;
+  o.frequency.value = hz;
+  o.connect(g);
+  o.start(t);
+  o.stop(t + len + 0.05);
+}
+const backing = { timer: null, out: null };
+/* Loops the chosen tune quietly (melody + a soft bass) so the voice is easy to hear over it */
+function startBacking() {
+  stopBacking();
+  const ctx = audioCtx();
+  if (!ctx) return;
+  const steps = SING_TUNES[sing.tune].steps;
+  const beat = SING_SPEED[sing.speed].beat;
+  const out = ctx.createGain();
+  out.gain.value = 0.55;
+  out.connect(ctx.destination);
+  backing.out = out;
+  let next = ctx.currentTime + 0.05, i = 0;
+  const schedule = () => {
+    while (next < ctx.currentTime + 0.4) {
+      playNote(ctx, out, SCALE_HZ[steps[i % steps.length]], next, beat * 0.9, 0.09, 'triangle');
+      if (i % 2 === 0) playNote(ctx, out, SCALE_HZ[i % 4 === 0 ? 0 : 4] / 2, next, beat * 1.8, 0.1, 'sine');
+      next += beat;
+      i++;
+    }
+  };
+  schedule();
+  backing.timer = setInterval(schedule, 100);
+}
+function stopBacking() {
+  clearInterval(backing.timer);
+  backing.timer = null;
+  const out = backing.out;
+  backing.out = null;
+  if (!out || !sing.audio) return;
+  try {
+    const t = sing.audio.currentTime;
+    out.gain.setValueAtTime(out.gain.value, t);
+    out.gain.linearRampToValueAtTime(0, t + 0.3);
+    setTimeout(() => out.disconnect(), 800);
+  } catch (e) { /* already gone */ }
+}
+function stopSpelling() {
+  sing.token++;
+  stopBacking();
+  if (window.speechSynthesis) speechSynthesis.cancel();
 }
 
-/* Sing one piece on a pitch. The note and the lit-up letter start the moment the
-   voice starts (onStart), so the letter and the music always land together.
-   If the voice is slow or missing, the music carries on without waiting forever. */
-function chant(text, step, rate, onStart) {
+/* Say one piece in a normal voice; resolves when it's done (or after a safe wait).
+   The letter lights up the moment the voice starts saying it. */
+function sayPart(text, rate, onStart) {
   return new Promise(resolve => {
     let started = false, finished = false;
     const start = () => { if (!started) { started = true; onStart?.(); } };
@@ -899,12 +938,12 @@ function chant(text, step, rate, onStart) {
       start();
       resolve();
     };
-    const lateStart = setTimeout(start, 900);    // voice hasn't begun: play the note anyway
-    const giveUp = setTimeout(finish, 3500);     // voice never finished: move on
-    if (!window.speechSynthesis || !singHasVoice()) { start(); setTimeout(finish, 650); return; }
+    const lateStart = setTimeout(start, 900);    // voice hasn't begun: light the letter anyway
+    const giveUp = setTimeout(finish, 4000);     // voice never finished: move on
+    if (!window.speechSynthesis) { start(); setTimeout(finish, 650); return; }
     const u = new SpeechSynthesisUtterance(text);
     try { if (preferredVoice) u.voice = preferredVoice; } catch (e) { /* use the default voice */ }
-    u.pitch = Math.min(2, 0.6 + step * 0.14);
+    u.lang = 'en-US';
     u.rate = rate;
     u.onstart = start;
     u.onend = finish;
@@ -920,12 +959,14 @@ const pause = ms => new Promise(r => setTimeout(r, ms));
 
 async function singWord(w, btn) {
   const my = ++sing.token;
-  if (window.speechSynthesis) {
+  // Phones only allow sound that starts inside the tap, so the music and the first
+  // letter start right away. Only wait when other speech has to be stopped first.
+  audioCtx();
+  if (window.speechSynthesis && (speechSynthesis.speaking || speechSynthesis.pending)) {
     speechSynthesis.cancel();
-    await pause(90);                 // Chrome drops speech that starts right after cancel()
+    await pause(120);                // Chrome drops speech that starts right after cancel()
     if (my !== sing.token) return;
   }
-  const tune = SING_TUNES[sing.tune];
   const speed = SING_SPEED[sing.speed];
   const letters = [...w.word];
   const stage = document.getElementById('singNow');
@@ -934,28 +975,29 @@ async function singWord(w, btn) {
     `<span class="sing-letter ${/[a-z]/i.test(ch) ? '' : 'mark'}">${escapeHtml(ch.toUpperCase())}</span>`).join('')}</div>
     <div class="sing-full" aria-live="polite"></div>`;
   const tiles = [...stage.querySelectorAll('.sing-letter')];
-  let n = 0;
+  startBacking();
   for (let i = 0; i < letters.length; i++) {
     if (my !== sing.token) return;
     const ch = letters[i];
-    if (!/[a-z]/i.test(ch)) { tiles[i].classList.add('lit'); continue; }   // apostrophes and hyphens are shown, not sung
-    const step = tune.steps[n++ % tune.steps.length];
-    // Sing the letter's NAME ("eff", "ar"…): a lone letter is often skipped or misread
-    await chant(letterName(ch), step, speed.rate, () => {
+    if (!/[a-z]/i.test(ch)) { tiles[i].classList.add('lit'); continue; }   // apostrophes and hyphens are shown, not said
+    // Say the letter's NAME ("eff", "are"…): a lone letter is often skipped or misread
+    await sayPart(letterName(ch), speed.rate, () => {
       if (my !== sing.token) return;
-      tiles[i].classList.add('lit');
-      chime(step);
+      tiles.forEach(t => t.classList.remove('now'));
+      tiles[i].classList.add('lit', 'now');
     });
+    if (my !== sing.token) return;
     await pause(speed.gap);
   }
   if (my !== sing.token) return;
-  await chant(`${w.word}!`, tune.end, speed.rate * 0.9, () => {
+  await sayPart(w.word, speed.rate * 0.9, () => {
     if (my !== sing.token) return;
+    tiles.forEach(t => t.classList.remove('now'));
     stage.querySelector('.sing-letters').classList.add('done');
     stage.querySelector('.sing-full').textContent = w.word;
-    chime(tune.end, 0.8);
   });
   if (my !== sing.token) return;
+  stopBacking();
   btn.classList.remove('singing');
   if (!sing.sung.has(w.word)) {
     sing.sung.add(w.word);
@@ -965,7 +1007,7 @@ async function singWord(w, btn) {
     updateScoreDisplay();
     setProgress(sing.sung.size / state.words.length);
     if (sing.sung.size === state.words.length) {
-      showToast('🎉 You sang every word!', 'correct');
+      showToast('🎉 You heard every word!', 'correct');
       document.getElementById('singDone').classList.add('ready');
     }
   }
@@ -973,13 +1015,13 @@ async function singWord(w, btn) {
 
 function buildSingGame() {
   sing.sung = new Set();
-  sing.token++;
+  stopSpelling();
   const words = state.words;
   document.getElementById('gameArea').innerHTML = `
     <div class="sing-card">
-      <p class="match-intro">🎵 Tap a word to hear it sung, letter by letter. Then sing it with me!</p>
+      <p class="match-intro">🎵 Tap a word to hear it spelled out loud over the music. Say the letters with me!</p>
       <div class="sing-controls">
-        <div class="sing-group" role="radiogroup" aria-label="Tune">
+        <div class="sing-group" role="radiogroup" aria-label="Music">
           ${Object.entries(SING_TUNES).map(([id, t]) =>
             `<button type="button" class="sing-opt ${id === sing.tune ? 'on' : ''}" data-tune="${id}" role="radio" aria-checked="${id === sing.tune}">${t.name}</button>`).join('')}
         </div>
@@ -987,21 +1029,21 @@ function buildSingGame() {
           <button type="button" class="sing-opt ${sing.speed === 'slow' ? 'on' : ''}" data-speed="slow" role="radio" aria-checked="${sing.speed === 'slow'}">🐢 Slow</button>
           <button type="button" class="sing-opt ${sing.speed === 'normal' ? 'on' : ''}" data-speed="normal" role="radio" aria-checked="${sing.speed === 'normal'}">🐇 Normal</button>
         </div>
-        <button type="button" class="btn-primary sing-all" id="singAll">🎵 Sing them all</button>
+        <button type="button" class="btn-primary sing-all" id="singAll">🎵 Spell them all</button>
       </div>
-      <p class="sing-novoice" id="singNoVoice" hidden>🔇 This device has no speaking voice turned on, so the letters light up with the music. Turn up the volume, or try another browser, to hear them sung.</p>
+      <p class="sing-novoice" id="singNoVoice" hidden>🔇 We can't find a speaking voice on this device, so you may only hear the music. Turn up the volume, check that text-to-speech is on, or try another browser.</p>
       <div class="sing-now" id="singNow"><p class="sing-placeholder">Pick a word below 👇</p></div>
       <div class="sing-grid">${words.map((w, i) =>
         `<button type="button" class="sing-word" data-i="${i}"><span class="sing-check" aria-hidden="true">♪</span>${escapeHtml(w.word)}${webBadge(w)}</button>`).join('')}</div>
-      <button type="button" class="next-btn" id="singDone">🏆 I'm done singing</button>
+      <button type="button" class="next-btn" id="singDone">🏆 I'm done</button>
     </div>`;
 
   document.querySelectorAll('.sing-word').forEach(b => b.addEventListener('click', () => singWord(words[+b.dataset.i], b)));
-  // Voices can load a moment after the page; only warn if there are still none
+  // Voices can load a few seconds after the page; only warn if there are still none
   setTimeout(() => {
     const note = document.getElementById('singNoVoice');
     if (note) note.hidden = singHasVoice();
-  }, 1500);
+  }, 3000);
   document.querySelectorAll('[data-tune]').forEach(b => b.addEventListener('click', () => {
     sing.tune = b.dataset.tune;
     document.querySelectorAll('[data-tune]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); });
@@ -1011,18 +1053,17 @@ function buildSingGame() {
     document.querySelectorAll('[data-speed]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); });
   }));
   document.getElementById('singAll').addEventListener('click', async () => {
-    let expected = ++sing.token;
+    let expected = sing.token + 1;
     for (const b of document.querySelectorAll('.sing-word')) {
-      if (sing.token !== expected) return;          // a tap or "done" took over
       await singWord(words[+b.dataset.i], b);       // each word moves the token on by one
+      if (sing.token !== expected) return;          // a tap or "done" took over
       expected++;
-      if (sing.token !== expected) return;
       await pause(500);
+      if (sing.token !== expected - 1) return;
     }
   });
   document.getElementById('singDone').addEventListener('click', () => {
-    sing.token++;
-    if (window.speechSynthesis) speechSynthesis.cancel();
+    stopSpelling();
     showResult();
   });
 }
@@ -1195,7 +1236,7 @@ function showResult() {
   if (pct === 1) {
     title   = '🏆 Perfect Score!';
     message = state.currentGame === 'sing'
-      ? `You sang all ${state.total} words! You're a true Spelling Superstar!`
+      ? `You heard all ${state.total} words spelled! You're a true Spelling Superstar!`
       : `Amazing! You got all ${state.total} correct. You're a true ${{ think: 'Reading Champion', infer: 'Reading Detective' }[state.currentGame] || 'Spelling Champion'}!`;
     stars   = '⭐⭐⭐';
     launchConfetti();
@@ -1214,7 +1255,7 @@ function showResult() {
   }
 
   if (state.currentGame === 'sing' && pct < 1) {
-    message = `You sang ${state.score} of ${state.total} words. Come back and sing the rest!`;
+    message = `You heard ${state.score} of ${state.total} words spelled. Come back for the rest!`;
   }
   document.getElementById('resultTitle').textContent   = title;
   document.getElementById('resultMessage').textContent = message;
